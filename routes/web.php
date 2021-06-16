@@ -1,0 +1,29 @@
+<?php
+use ProcessMaker\Adoa\classes\MigrateUsersProd;
+
+Route::group(['middleware' => ['auth']], function () {
+    // Route::get('admin/adoa', 'AdoaController@index')->name('package.skeleton.index');
+    // Route::get('adoa', 'AdoaController@index')->name('package.skeleton.tab.index');
+    Route::get('adoa/report', 'AdoaEmployeeAppraisalController@index')->name('package.adoa.tab.report');
+    Route::get('adoa/employee-appraisal/print', 'AdoaEmployeeAppraisalController@generateReportPdf');
+    Route::get('adoa/dashboard/requests', 'AdoaController@getListRequests')->name('package.adoa.listRequests');
+    Route::get('adoa/dashboard/todo', 'AdoaController@getListToDo')->name('package.adoa.listToDo');
+    Route::get('adoa/dashboard/shared-with-me', 'AdoaController@getListShared')->name('package.adoa.sharedWithMe');
+    Route::get('adoa/print/{request}/{media}', 'AdoaController@printFile');
+    Route::get('adoa/view/{request}/{media}', 'AdoaController@viewFile');
+    Route::get('adoa/view-pdf/{request}', 'AdoaController@getFile');
+    Route::get('adoa/dashboard/requests-agency/{groupId}', 'AdoaController@getListRequestsAgency');
+    Route::get('adoa/new-dashboard', 'AdoaController@index');
+    ////--- RWA
+    // https://pm4-3315.processmaker.net/adoa/rwa-report
+    Route::get('adoa/rwa-report', 'AdoaRwaReportController@index')->name('package.adoa.tab.rwa-report');
+
+});
+
+Route::get('adoa/users/prod/{groupIdEmployee}/{groupIdManager}', 'AdoaMigrateUsersController@migratedUsersProd');
+Route::get('adoa/users/dev/{groupIdEmployee}/{groupIdManager}', 'AdoaMigrateUsersController@migratedUsersDev');
+Route::get('adoa/users/admin/{groupId}', 'AdoaMigrateUsersController@migrateAdministrators');
+Route::get('adoa/deleteUsers', 'AdoaMigrateUsersController@deleteUsers');
+Route::get('adoa/user-information-data/{user_id}', 'AdoaUserInformationController@getUserInformationByUserId');
+Route::get('adoa/updateMigratedUsers', 'AdoaMigrateUsersController@updateMigratedUsers');
+Route::get('adoa/test', 'AdoaUsersController@test');
