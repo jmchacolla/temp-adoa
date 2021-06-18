@@ -29,31 +29,6 @@ async function getAdminUser() {
     if (groupAgency.length > 0) {
         adminAgency = 1;
     }
-
-    if (window.location.pathname == '/tasks' && adminGroup == 0 && adminAgency == 0) {
-        window.location.replace("/adoa/dashboard/todo");
-    }
-
-    if (window.location.pathname.split('/')[1] == 'requests' && adminGroup == 0 && adminAgency == 0) {
-        if (!isNaN(window.location.pathname.split('/')[2])) {
-            let promise = ProcessMaker.apiClient.get('adoa/get-task/' + window.location.pathname.split('/')[2]);
-            promise.then(response => {
-                if (response.data.length > 0) {
-                    window.location.replace('/tasks/' + response.data[0].task_id + '/edit');
-                } else {
-                    ProcessMaker.apiClient.get('requests/' + window.location.pathname.split('/')[2] + '?include=data').then(response => {
-                        if (response.data.data.EMA_FORM_ACTION == 'DELETE' || response.data.data.FORM_ACTION == 'DELETE') {
-                            window.location.replace('/adoa/dashboard/requests');
-                        } else {
-                            window.location.replace('/adoa/view-pdf/' + window.location.pathname.split('/')[2]);
-                        }
-                    });
-                }
-            });
-        } else {
-            window.location.replace('/adoa/dashboard/todo');
-        }
-    }
 }
 getAdminUser();
 
