@@ -15,23 +15,6 @@ async function getAgencyEnabled(agency) {
     return enabled;
 }
 
-var adminGroup = 0;
-var adminAgency = 0;
-async function getAdminUser() {
-    let responseAdmin = await ProcessMaker.apiClient.get('adoa/group-admin/' + ProcessMaker.user.id);
-    let groupAdmin = await responseAdmin.data;
-    if (groupAdmin.length > 0) {
-        adminGroup = 1;
-    }
-
-    let responseAgency = await ProcessMaker.apiClient.get('adoa/group-admin-agency/' + ProcessMaker.user.id + '/8');
-    let groupAgency = await responseAgency.data;
-    if (groupAgency.length > 0) {
-        adminAgency = 1;
-    }
-}
-getAdminUser();
-
 $('head').append('<link rel="stylesheet" type="text/css" href="/vendor/processmaker/packages/adoa/css/CssLibraryExcelBootstrapTableFilter.css">');
 
 $(document).ready(function () {
@@ -225,9 +208,7 @@ $(document).ready(function () {
     setTimeout(function(){
         $("li.list-group-item:contains('Due')").hide();
     }, 1000);
-    if(adminGroup == 0 && adminAgency == 0) {
-        $("button[title='Advanced Mode']").hide();
-    }
+
     $("#listRequests tr").dblclick(function(){
         if (window.location.pathname == '/adoa/dashboard/requests') {
             if ($(this).find('td').eq(8)[0].innerText == "COMPLETED") {
