@@ -7,6 +7,7 @@ use ProcessMaker\Package\Packages\Events\PackageEvent;
 use ProcessMaker\Package\Adoa\Http\Middleware\AddToMenus;
 use ProcessMaker\Package\Adoa\Http\Middleware\Redirect;
 use ProcessMaker\Package\Adoa\Listeners\PackageListener;
+use ProcessMaker\Package\PackageComments\Http\Middleware\AddToMenus as CommentsAddToMenus;
 use ProcessMaker\Package\SavedSearch\Http\Middleware\AddToMenus as SavedSearchAddToMenus;
 use GlobalScripts;
 
@@ -57,6 +58,10 @@ class PackageServiceProvider extends ServiceProvider
             
             if (class_exists(SavedSearchAddToMenus::class)) {
                 Route::pushMiddlewareToGroup('web', SavedSearchAddToMenus::class);
+            }
+            
+            if (class_exists(CommentsAddToMenus::class)) {
+                Route::pushMiddlewareToGroup('web', CommentsAddToMenus::class);
             }
 
             Route::pushMiddlewareToGroup('web', AddToMenus::class);
