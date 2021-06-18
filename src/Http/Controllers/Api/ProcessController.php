@@ -3,8 +3,8 @@ namespace ProcessMaker\Package\Adoa\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use ProcessMaker\Http\Controllers\Api\ProcessController as BaseProcessController;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
+use ProcessMaker\Package\Adoa\StartProcessRequestRules;
+use ProcessMaker\Models\Process;
 
 class ProcessController extends BaseProcessController 
 {
@@ -17,42 +17,27 @@ class ProcessController extends BaseProcessController
         if ($user->is_administrator) {
             return $result;
         }
-
+            
         $result->collection = $result->collection->filter(function($process) use ($user) {
-            if (stripos($process->name, 'AZPerforms') === false) {
+            $startProcessRequestRules = new StartProcessRequestRules($process, $user);
+            if ($startProcessRequestRules->agencyAllowed()) {
                 return true;
             }
-
-            if ($this->isUsersAgencyActive($user)) {
-                return true;
-            }
-
             return false;
-        });
+        })->values();
+
         return $result;
     }
 
-    private function isUsersAgencyActive($user)
+    // Override core's triggerStartEvent
+    public function triggerStartEvent(Process $process, Request $request)
     {
-        if ($user->meta && $user->meta->agency) {
-            return $this->agencyIsActive($user->meta->agency);
+        $startProcessRequestRules = new StartProcessRequestRules($process, $request->user());
+        if (!$startProcessRequestRules->agencyAllowed()) {
+            throw new \Exception("User's agency is disabled");
         }
-        return false;
+
+        return parent::triggerStartEvent($process, $request);
     }
 
-    private function agencyIsActive(string $agency)
-    {
-        $result = Cache::remember("agency-active-$agency", 600, function () use ($agency) {
-            $client = new \GuzzleHttp\Client();
-            $url = "https://hrsieapi.azdoa.gov/api/hrorg/AzPerformAgencyCFG.json?agency=" . $agency;
-            $headers = [
-                'Authorization' => 'Bearer 3-5738379ecfaa4e9fb2eda707779732c7',
-            ];
-            $response = $client->request('GET', $url, ['headers' => $headers]);
-            $response = json_decode($response->getBody(), true);
-
-            return Arr::get($response, 'rows.0.0') === 'Y' ? true : false;
-        });
-        return $result;
-    }
 }
