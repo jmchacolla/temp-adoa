@@ -51,11 +51,11 @@ $(document).ready(function () {
     }
 });
 
-function printPdf(request, file) {
+window.printPdf = function(request, file) {
     window.open('/adoa/view/' + request + '/' + file).print();
 }
 
-function viewPdf(request, file) {
+window.viewPdf = function(request, file) {
     $('.modal-body').html('');
     $('.modal-body').html('<embed src="/adoa/view/' + request + '/' + file + '" frameborder="0" width="100%" height="800px">');
     $('#showPdf').modal('show');
