@@ -45,11 +45,11 @@ class AddToMenus
     
     private function clearMenu(Builder $menu)
     {
-        $submenu = $menu->first();
-        
-        foreach($submenu->children() as $key => $item) {
-            $menu->items->forget($key + 1);
-        }
+        $menu->filter(function($item) {
+            if (! $item->hasParent()) {
+                return true;
+            }
+        });
     }
     
     private function addToMenu(Builder $menu)
