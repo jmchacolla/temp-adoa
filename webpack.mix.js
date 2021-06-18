@@ -19,4 +19,10 @@ mix.setPublicPath('public')
     .js('resources/js/adoaEmployeeAppraisal.js', 'js')
     .sass('resources/sass/package.scss', 'css')
     .version()
-    ;
+    .then(() => {
+        try {
+          require('./webpack.callback')();
+        } catch(e) {
+          //No callback found
+        }
+    });
