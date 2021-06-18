@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use ProcessMaker\Package\Packages\Events\PackageEvent;
 use ProcessMaker\Package\Adoa\Http\Middleware\AddToMenus;
 use ProcessMaker\Package\Adoa\Listeners\PackageListener;
+use ProcessMaker\Package\SavedSearch\Http\Middleware\AddToMenus as SavedSearchAddToMenus;
 use GlobalScripts;
 
 class PackageServiceProvider extends ServiceProvider
@@ -52,6 +53,10 @@ class PackageServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->prefix('api/1.0')
                 ->group(__DIR__ . '/../routes/api.php');
+            
+            if (class_exists(SavedSearchAddToMenus::class)) {
+                Route::pushMiddlewareToGroup('web', SavedSearchAddToMenus::class);
+            }
 
             Route::pushMiddlewareToGroup('web', AddToMenus::class);
         }
