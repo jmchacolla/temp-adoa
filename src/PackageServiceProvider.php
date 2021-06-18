@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use ProcessMaker\Package\Packages\Events\PackageEvent;
 use ProcessMaker\Package\Adoa\Http\Middleware\AddToMenus;
+use ProcessMaker\Package\Adoa\Http\Middleware\Redirect;
 use ProcessMaker\Package\Adoa\Listeners\PackageListener;
 use ProcessMaker\Package\SavedSearch\Http\Middleware\AddToMenus as SavedSearchAddToMenus;
 use GlobalScripts;
@@ -59,6 +60,8 @@ class PackageServiceProvider extends ServiceProvider
             }
 
             Route::pushMiddlewareToGroup('web', AddToMenus::class);
+                
+            Route::pushMiddlewareToGroup('web', Redirect::class);
         }
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views/', 'adoa');
