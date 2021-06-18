@@ -33,9 +33,7 @@ class Redirect
                         $processRequest = $request->route()->parameters['request'];
                         $task = $this->getTask($processRequest);
                         
-                        if ($task) {
-                            return redirect()->route('tasks.edit', ['task' => $task]);
-                        } else {
+                        if (! $task) {
                             if (isset($processRequest->data['EMA_FORM_ACTION']) && $processRequest->data['EMA_FORM_ACTION'] == 'DELETE') {
                                 return redirect()->route('package.adoa.listRequests');
                             } elseif (isset($processRequest->data['FORM_ACTION']) && $processRequest->data['FORM_ACTION'] == 'DELETE') {
