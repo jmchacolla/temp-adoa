@@ -1,4 +1,4 @@
-var transition = '<div style="background-color: rgba(255,255,255,.9);position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;" id="transition">';
+var transition = '<div style="background-color: rgba(255,255,255,.9);position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;display:none;" id="transition">';
     transition += '<div class="text-center" style="margin: 20%;position: relative;">';
     transition += '<img src="/img/processmaker_logo.png" style="filter: invert(80%);" alt="">';
     transition += '<div class="text-center">';
