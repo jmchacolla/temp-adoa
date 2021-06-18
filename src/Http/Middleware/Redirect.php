@@ -1,0 +1,69 @@
+<?php
+namespace ProcessMaker\Package\Adoa\Http\Middleware;
+
+use Auth;
+use Closure;
+use ProcessMaker\Models\ProcessRequest;
+use ProcessMaker\Models\ProcessRequestToken;
+
+class Redirect
+{
+    const ADMIN_GROUP_ID = 3;
+    
+    const AGENCY_GROUP_ID = 8;
+    
+    private $inAdminGroup = false;
+    
+    private $inAgencyGroup = false;
+    
+    public function handle($request, Closure $next)
+    {
+        if (Auth::check()) {
+            $this->setGroupStatus();
+            
+            if (! $this->inAdminGroup && ! $this->inAgencyGroup) {
+                switch ($request->path()) {
+                    case 'tasks':
+                    case 'requests':
+                        return redirect()->route('package.adoa.listToDo');
+                }
+                
+                if ($request->route()->getName() == 'requests.show') {
+                    if (isset($request->route()->parameters['request'])) {
+                        $processRequest = $request->route()->parameters['request'];
+                        $task = $this->getTask($processRequest);
+                        
+                        if ($task) {
+                            return redirect()->route('tasks.edit', ['task' => $task]);
+                        } else {
+                            if (isset($request->data['EMA_FORM_ACTION']) && $request->data['EMA_FORM_ACTION'] == 'DELETE') {
+                                return redirect()->route('package.adoa.listRequests');
+                            } elseif (isset($request->data['FORM_ACTION']) && $request->data['FORM_ACTION'] == 'DELETE') {
+                                return redirect()->route('package.adoa.listRequests');
+                            } else {
+                                return redirect()->route('package.adoa.getPdfFile', ['request' => $request->id]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $next($request);
+    }
+
+    private function setGroupStatus()
+    {
+        $groups = Auth::user()->groups->pluck('id');
+        $this->inAdminGroup = $groups->contains(self::ADMIN_GROUP_ID);
+        $this->inAgencyGroup = $groups->contains(self::AGENCY_GROUP_ID);
+    }
+    
+    private function getTask(ProcessRequest $processRequest) {
+        return ProcessRequestToken::where('process_request_id', $processRequest->id)
+            ->where('element_type', 'task')
+            ->where('status', 'ACTIVE')
+            ->where('user_id', Auth::user()->id)
+            ->first();
+    }
+}

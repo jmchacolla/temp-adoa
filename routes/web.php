@@ -11,8 +11,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('adoa/dashboard/shared-with-me', 'AdoaController@getListShared')->name('package.adoa.sharedWithMe');
     Route::get('adoa/print/{request}/{media}', 'AdoaController@printFile');
     Route::get('adoa/view/{request}/{media}', 'AdoaController@viewFile');
-    Route::get('adoa/view-pdf/{request}', 'AdoaController@getFile');
-    Route::get('adoa/dashboard/requests-agency/{groupId}', 'AdoaController@getListRequestsAgency');
+    Route::get('adoa/view-pdf/{request}', 'AdoaController@getFile')->name('package.adoa.getPdfFile');
+    Route::get('adoa/dashboard/requests-agency/{groupId}', 'AdoaController@getListRequestsAgency')->name('package.adoa.agencyRequests');
     Route::get('adoa/new-dashboard', 'AdoaController@index');
     ////--- RWA
     // https://pm4-3315.processmaker.net/adoa/rwa-report
