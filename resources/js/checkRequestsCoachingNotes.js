@@ -54,38 +54,6 @@ async function getAdminUser() {
             window.location.replace('/adoa/dashboard/todo');
         }
     }
-
-    if (window.location.pathname.split('/')[1] == 'adoa' || window.location.pathname.split('/')[1] == 'requests' || (window.location.pathname.split('/')[1] == 'tasks' && window.location.pathname.split('/')[3] == 'edit')) {
-        var html = '<div id="Sidebaricon" title="My requests" class="filter-bar justify-content-between">';
-        html += '<li class="nav-item">';
-        html += '<a href="/adoa/dashboard/requests" class="nav-link">';
-        html += '<i class="fas fa-tasks"></i>';
-        html += '</a>';
-        html += '</li>';
-        html += '</div>';
-        html += '<div id="Sidebaricon" title="Shared with me" class="filter-bar justify-content-between">';
-        html += '<li class="nav-item">';
-        html += '<a href="/adoa/dashboard/shared-with-me" class="nav-link">';
-        html += '<i class="fas fa-share-square"></i>';
-        html += '</a>';
-        html += '</li>';
-        html += '</div>';
-        if (adminAgency == 1) {
-            html += '<div id="Sidebaricon" title="Agency Requests" class="filter-bar justify-content-between">';
-            html += '<li class="nav-item">';
-            html += '<a href="/adoa/dashboard/requests-agency/8" class="nav-link">';
-            html += '<i class="fas fa-laptop-house"></i>';
-            html += '</a>';
-            html += '</li>';
-            html += '</div>';
-        }
-        if(adminGroup == 1 || adminAgency == 1) {
-            $('.nav.flex-column').eq(1).append(html);
-        } else {
-            $('.nav.flex-column').eq(1).html('');
-            $('.nav.flex-column').eq(1).html(html);
-        }
-    }
 }
 getAdminUser();
 
