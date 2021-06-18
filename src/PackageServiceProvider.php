@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use ProcessMaker\Package\Packages\Events\PackageEvent;
 use ProcessMaker\Package\Adoa\Http\Middleware\AddToMenus;
+use ProcessMaker\Package\Adoa\Http\Middleware\Redirect;
 use ProcessMaker\Package\Adoa\Listeners\PackageListener;
 use GlobalScripts;
 
@@ -54,6 +55,8 @@ class PackageServiceProvider extends ServiceProvider
                 ->group(__DIR__ . '/../routes/api.php');
 
             Route::pushMiddlewareToGroup('web', AddToMenus::class);
+                
+            Route::pushMiddlewareToGroup('web', Redirect::class);
         }
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views/', 'adoa');
