@@ -36,12 +36,12 @@ class Redirect
                         if ($task) {
                             return redirect()->route('tasks.edit', ['task' => $task]);
                         } else {
-                            if (isset($request->data['EMA_FORM_ACTION']) && $request->data['EMA_FORM_ACTION'] == 'DELETE') {
+                            if (isset($processRequest->data['EMA_FORM_ACTION']) && $processRequest->data['EMA_FORM_ACTION'] == 'DELETE') {
                                 return redirect()->route('package.adoa.listRequests');
-                            } elseif (isset($request->data['FORM_ACTION']) && $request->data['FORM_ACTION'] == 'DELETE') {
+                            } elseif (isset($processRequest->data['FORM_ACTION']) && $processRequest->data['FORM_ACTION'] == 'DELETE') {
                                 return redirect()->route('package.adoa.listRequests');
                             } else {
-                                return redirect()->route('package.adoa.getPdfFile', ['request' => $request->id]);
+                                return redirect()->route('package.adoa.getPdfFile', ['request' => $processRequest->id]);
                             }
                         }
                     }
