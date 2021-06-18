@@ -67,5 +67,10 @@ class PackageServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../classes' => public_path('vendor/processmaker/packages/adoa'),
         ], 'adoa');
+
+        $this->app->bind(
+            \ProcessMaker\Http\Controllers\Api\ProcessController::class,
+            \ProcessMaker\Package\Adoa\Http\Controllers\Api\ProcessController::class
+        );
     }
 }
