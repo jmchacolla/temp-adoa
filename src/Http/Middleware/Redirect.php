@@ -28,7 +28,7 @@ class Redirect
                         return redirect()->route('package.adoa.listToDo');
                 }
                 
-                if ($request->route()->getName() == 'requests.show') {
+                /*if ($request->route()->getName() == 'requests.show') {
                     if (isset($request->route()->parameters['request'])) {
                         $processRequest = $request->route()->parameters['request'];
                         $task = $this->getTask($processRequest);
@@ -43,7 +43,7 @@ class Redirect
                             }
                         }
                     }
-                }
+                }*/
             }
         }
 
