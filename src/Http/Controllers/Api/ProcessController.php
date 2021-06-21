@@ -6,26 +6,31 @@ use ProcessMaker\Http\Controllers\Api\ProcessController as BaseProcessController
 use ProcessMaker\Package\Adoa\StartProcessRequestRules;
 use ProcessMaker\Models\Process;
 
-class ProcessController extends BaseProcessController 
+class ProcessController extends BaseProcessController
 {
     // Override core's startProcesses list
     public function startProcesses(Request $request)
     {
         $user = $request->user();
         $result = parent::startProcesses($request);
-        
+
         if ($user->is_administrator) {
             return $result;
         }
-            
+
         $result->collection = $result->collection->filter(function($process) use ($user) {
             $startProcessRequestRules = new StartProcessRequestRules($process, $user);
+            if($startProcessRequestRules->remoteWorkAgreementInProgress()) {
+                return true;
+            } else {
+                return false;
+            }
             if ($startProcessRequestRules->agencyAllowed()) {
                 return true;
+            } else {
+                return false;
             }
-            return false;
         })->values();
-
         return $result;
     }
 
@@ -36,7 +41,9 @@ class ProcessController extends BaseProcessController
         if (!$startProcessRequestRules->agencyAllowed()) {
             throw new \Exception("User's agency is disabled");
         }
-
+        if (!$startProcessRequestRules->remoteWorkAgreementInProgress()) {
+            throw new \Exception("Currently you have a open request");
+        }
         return parent::triggerStartEvent($process, $request);
     }
 

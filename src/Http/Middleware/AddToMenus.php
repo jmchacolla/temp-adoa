@@ -9,26 +9,26 @@ use Lavary\Menu\Facade as Menu;
 class AddToMenus
 {
     const ADMIN_GROUP_ID = 3;
-    
-    const AGENCY_GROUP_ID = 8;
-    
+
+    const AGENCY_GROUP_ID = 7;
+
     private $inAdminGroup = false;
-    
+
     private $inAgencyGroup = false;
-    
+
     public function handle($request, Closure $next)
     {
         if (Auth::check()) {
             $this->setGroupStatus();
-            
+
             $requestMenu = Menu::get('sidebar_request');
             $taskMenu = Menu::get('sidebar_task');
-            
+
             if (! $this->inAdminGroup && ! $this->inAgencyGroup) {
                 $this->clearMenu($requestMenu);
                 $this->clearMenu($taskMenu);
             }
-            
+
             $this->addToMenu($requestMenu);
             $this->addToMenu($taskMenu);
         }
@@ -42,7 +42,7 @@ class AddToMenus
         $this->inAdminGroup = $groups->contains(self::ADMIN_GROUP_ID);
         $this->inAgencyGroup = $groups->contains(self::AGENCY_GROUP_ID);
     }
-    
+
     private function clearMenu(Builder $menu)
     {
         $menu->filter(function($item) {
@@ -51,21 +51,21 @@ class AddToMenus
             }
         });
     }
-    
+
     private function addToMenu(Builder $menu)
     {
         $submenu = $menu->first();
-            
+
         $submenu->add(__('My Requests'), [
             'route' => ['package.adoa.listRequests'],
             'icon' => 'fa-tasks',
         ]);
-        
+
         $submenu->add(__('Shared With Me'), [
             'route' => ['package.adoa.sharedWithMe'],
             'icon' => 'fa-share-square',
         ]);
-        
+
         if ($this->inAgencyGroup) {
             $submenu->add(__('Agency Requests'), [
                 'route' => ['package.adoa.agencyRequests', 'groupId' => self::AGENCY_GROUP_ID],

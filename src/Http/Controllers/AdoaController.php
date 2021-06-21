@@ -121,7 +121,7 @@ class AdoaController extends Controller
 
     public function getListRequestsAgency($groupId) {
         $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
-        if (count($member) > 0 && $groupId == 8) {
+        if (count($member) > 0 && $groupId == 7) {
             $agencies = explode(',', Auth::user()->meta->agency);
             $agenciesArray = array();
             if (count($agencies) == 1 && $agencies[0] == 'ALL') {
@@ -185,6 +185,7 @@ class AdoaController extends Controller
                 'process_requests.completed_at',
                 'media.id AS file_id',
                 'media.custom_properties')
+            ->where('media.disk', 'public')
             ->where('process_requests.status', 'COMPLETED')
             ->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
             ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)

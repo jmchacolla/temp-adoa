@@ -91,6 +91,12 @@
             </label>
             <select class="form-control" id="adoaEmployeeAdmin" style="width:50%;" v-model="adoaEmployeeSelected" v-if="isSysAdmin"></select>
             <select class="form-control" id="adoaEmployee" style="width:50%;" v-model="adoaEmployeeSelected" v-if="!isSysAdmin"></select>
+            <div v-if="loading" style="display:inherit;">
+                <button class="btn btn-default">
+                    <span class="spinner-border spinner-border-sm text-primary"></span>
+                </button>
+                <small class="text-secondary">We are loading your data, please be patient...</small>
+            </div>
         </div>
 
         <div class="col-lg-12 col-md-12 col-sm-12" style="margin:10px;">
@@ -153,30 +159,22 @@
         </div>
     </div>
 
-
-
 </div>
 
 
     @section('js')
         {{-- JqueryDataTable --}}
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css">
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.23/css/dataTables.bootstrap4.min.css">
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.6.5/css/buttons.bootstrap4.min.css">
 
+        <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css" />
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css">
         <script>
             window.temp_define = window['define'];
             window['define']  = undefined;
         </script>
-
-
-            <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js"></script>
-            <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.23/js/dataTables.bootstrap4.min.js"></script>
-            <!-- Sugest  selectpicker -->
-
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/js/select2.min.js" ></script>
-            <link href="https://rawgit.com/select2/select2/master/dist/css/select2.min.css" rel="stylesheet"/>
-
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+            <script type="text/javascript" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js">
         <script>
             window['define'] = window.temp_define;
         </script>
@@ -198,7 +196,9 @@
                         showList : false,
                         currentUserId : {{ auth()->user()->id }},
                         isManager: {{ empty($isManager) ? 'false' : $isManager }},
-                        isSysAdmin: {{ empty($isSysAdmin) ? 'false' : $isSysAdmin }}
+                        isSysAdmin: {{ empty($isSysAdmin) ? 'false' : $isSysAdmin }},
+                        agreementCollectionId: {{ $agreementCollectionId }},
+                        loading:false
                     }
                 },
                 methods : {
@@ -299,11 +299,10 @@
                     getRwaList() {
                         ProcessMaker.apiClient
                         .get(
-                            "/adoa/rwa-user-report?" +
-                            "userEin=" + this.adoaEin
+                            '/collections/' + this.agreementCollectionId + '/records?pmql=((data.USER_ID = "' + this.adoaEmployeeSelected +'") AND (data.ADOA_RWA_REMOTE_AGREEMENT_VALID = "Y"))'
                         )
                         .then(response => {
-                            this.rwaList = response.data;
+                            this.rwaList = response.data.data;
                             this.showList = true;
                             $('#rwaList').DataTable().destroy();
                         })
@@ -326,32 +325,46 @@
                                 "order": [[ 1, "asc" ]],
                                 "data" : app.rwaList,
                                 "columns": [
-                                    { "title": "Request No.",  "data": "request_id", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "Full Name", "data": "lastname", "defaultContent": "", "class": "text-center",
+                                    { "title": "Request No.",  "data": "data.REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
+                                    { "title": "Full Name", "data": "data.ADOA_RWA_EMPLOYEE_NAME", "defaultContent": "", "class": "text-center",
                                         "render": function (data, type, row) {
-                                            return row.firstname + ' ' + row.lastname;
+                                            return row.data.ADOA_RWA_EMPLOYEE_NAME.toUpperCase();
                                         }
                                     },
-                                    { "title": "EIN", "data": "ein", "defaultContent": "", "sortable": false, "class": "text-center"},
-                                    { "title": "From", "data": "date_from", "defaultContent": "", "class": "text-center"},
-                                    { "title": "To", "data": "date_to", "defaultContent": "", "class": "text-center"},
+                                    { "title": "EIN", "data": "data.ADOA_RWA_EIN", "defaultContent": "", "sortable": false, "class": "text-center"},
+                                    { "title": "From", "data": "data.ADOA_RWA_REMOTE_AGREEMENT_START_DATE", "defaultContent": "", "class": "text-center"},
+                                    { "title": "To", "data": "data.ADOA_RWA_REMOTE_AGREEMENT_END_DATE", "defaultContent": "", "class": "text-center"},
                                     {
                                         "title": "Actions", "data" : "", "sortable": false, "defaultContent": "", "class": "text-center",
-                                        "render": function (data, type,row) {
+                                        "render": function (data, type, row) {
                                             let html = '';
-                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.request_id + ', ' + row.file_id + ');"></i></a>&nbsp;';
-                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.request_id + ', ' + row.file_id + ');"></i></a>&nbsp;';
-                                            html += '<a href="/request/' + row.request_id + '/files/' + row.file_id + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="/request/' + row.data.REQUEST_ID + '/files/' + row.data.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
                                             return html;
                                         }
                                     }
                                 ]
                             }).draw();
+
+
+
                         });
+
                     }
                 }
 
             }).$mount('#app');
+
+            function printPdf(request, file) {
+                window.open('/adoa/view/' + request + '/' + file).print();
+            }
+
+            function viewPdf(request, file) {
+                $('.modal-body').html('');
+                $('.modal-body').html('<embed src="/adoa/view/' + request + '/' + file + '" frameborder="0" width="100%" height="800px">');
+                $('#showPdf').modal('show');
+            }
 
         </script>
     @endsection

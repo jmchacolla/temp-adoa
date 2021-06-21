@@ -6,6 +6,8 @@ use ProcessMaker\Models\ProcessRequest;
 use ProcessMaker\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
+use Auth;
+use ProcessMaker\Models\EnvironmentVariable;
 
 class StartProcessRequestRules {
     private $process;
@@ -17,7 +19,7 @@ class StartProcessRequestRules {
         $this->process = $process;
         $this->user = $user;
     }
-    
+
     public function agencyAllowed() : bool
     {
         if (stripos($this->process->name, 'AZPerforms') === false) {
@@ -48,5 +50,29 @@ class StartProcessRequestRules {
             return Arr::get($response, 'rows.0.0') === 'Y' ? true : false;
         });
         return $result;
+    }
+
+    public function remoteWorkAgreementInProgress() : bool
+    {
+        if (stripos($this->process->name, 'Remote Work - Initiate or Terminate Agreement') === false) {
+            return true;
+        }
+
+        if (!$this->getRemoteWorkAgreementInProgress()) {
+            return true;
+        }
+
+        $this->message = 'Currently you have a request In Progress';
+        return false;
+    }
+
+    private function getRemoteWorkAgreementInProgress() {
+        $processID = EnvironmentVariable::whereName('rwa_initiate_terminate_process_id')->first()->value;
+        $result = ProcessRequest::select('id')
+            ->where('process_id', $processID)
+            ->where('status', 'ACTIVE')
+            ->where('user_id', Auth::user()->id)
+            ->first();
+        return empty($result) ? false : true;
     }
 }
