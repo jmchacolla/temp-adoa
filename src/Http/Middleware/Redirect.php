@@ -48,7 +48,7 @@ class Redirect
     {
         $groups = Auth::user()->groups->pluck('id');
         $this->inAdminGroup = $groups->contains(config('adoa.admin_group_id'));
-        $this->inAgencyGroup = $groups->contains(config('adoa.admin_agency_group_id'));
+        $this->inAgencyGroup = $groups->contains(config('adoa.agency_admin_group_id'));
     }
     
     private function getTask(ProcessRequest $processRequest, $userId) {
