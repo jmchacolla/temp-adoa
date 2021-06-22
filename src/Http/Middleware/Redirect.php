@@ -27,23 +27,21 @@ class Redirect
                     case 'requests':
                         return redirect()->route('package.adoa.listToDo');
                 }
-                
-                /*if ($request->route()->getName() == 'requests.show') {
+                if ($request->route()->getName() == 'requests.show') {
                     if (isset($request->route()->parameters['request'])) {
                         $processRequest = $request->route()->parameters['request'];
-                        $task = $this->getTask($processRequest);
-                        
-                        if (! $task) {
-                            if (isset($processRequest->data['EMA_FORM_ACTION']) && $processRequest->data['EMA_FORM_ACTION'] == 'DELETE') {
-                                return redirect()->route('package.adoa.listRequests');
-                            } elseif (isset($processRequest->data['FORM_ACTION']) && $processRequest->data['FORM_ACTION'] == 'DELETE') {
-                                return redirect()->route('package.adoa.listRequests');
-                            } else {
-                                return redirect()->route('package.adoa.getPdfFile', ['request' => $processRequest->id]);
-                            }
+                        $userId = Auth::user()->id;
+                        if ($processRequest['user_id'] == $userId && isset($processRequest['data']['pdf'])) {
+                            return redirect()->route('package.adoa.getPdfFile', ['request' => $processRequest->id]);
+                        }
+                        if ($processRequest['user_id'] != $userId) {
+                            return redirect()->route('package.adoa.listRequests');
+                        }
+                        if ($task = $this->getTask($processRequest, $userId)) {
+                            return redirect()->route('tasks.edit', ['task' => $task->id]);
                         }
                     }
-                }*/
+                }
             }
         }
 
@@ -57,11 +55,11 @@ class Redirect
         $this->inAgencyGroup = $groups->contains(self::AGENCY_GROUP_ID);
     }
     
-    private function getTask(ProcessRequest $processRequest) {
+    private function getTask(ProcessRequest $processRequest, $userId) {
         return ProcessRequestToken::where('process_request_id', $processRequest->id)
             ->where('element_type', 'task')
             ->where('status', 'ACTIVE')
-            ->where('user_id', Auth::user()->id)
+            ->where('user_id', $userId)
             ->first();
     }
 }
