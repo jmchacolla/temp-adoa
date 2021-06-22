@@ -36,7 +36,7 @@ class AddToMenus
     {
         $groups = Auth::user()->groups->pluck('id');
         $this->inAdminGroup = $groups->contains(config('adoa.admin_group_id'));
-        $this->inAgencyGroup = $groups->contains(config('adoa.admin_agency_group_id'));
+        $this->inAgencyGroup = $groups->contains(config('adoa.agency_admin_group_id'));
     }
     
     private function clearMenu(Builder $menu)
@@ -64,7 +64,7 @@ class AddToMenus
         
         if ($this->inAgencyGroup) {
             $submenu->add(__('Agency Requests'), [
-                'route' => ['package.adoa.agencyRequests', 'groupId' => config('adoa.admin_agency_group_id')],
+                'route' => ['package.adoa.agencyRequests', 'groupId' => config('adoa.agency_admin_group_id')],
                 'icon' => 'fa-laptop-house',
             ]);
         }
