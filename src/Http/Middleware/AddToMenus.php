@@ -8,10 +8,6 @@ use Lavary\Menu\Facade as Menu;
 
 class AddToMenus
 {
-    const ADMIN_GROUP_ID = 3;
-    
-    const AGENCY_GROUP_ID = 8;
-    
     private $inAdminGroup = false;
     
     private $inAgencyGroup = false;
@@ -39,8 +35,8 @@ class AddToMenus
     private function setGroupStatus()
     {
         $groups = Auth::user()->groups->pluck('id');
-        $this->inAdminGroup = $groups->contains(self::ADMIN_GROUP_ID);
-        $this->inAgencyGroup = $groups->contains(self::AGENCY_GROUP_ID);
+        $this->inAdminGroup = $groups->contains(config('adoa.admin_group_id'));
+        $this->inAgencyGroup = $groups->contains(config('adoa.admin_agency_group_id'));
     }
     
     private function clearMenu(Builder $menu)
@@ -68,7 +64,7 @@ class AddToMenus
         
         if ($this->inAgencyGroup) {
             $submenu->add(__('Agency Requests'), [
-                'route' => ['package.adoa.agencyRequests', 'groupId' => self::AGENCY_GROUP_ID],
+                'route' => ['package.adoa.agencyRequests', 'groupId' => config('adoa.admin_agency_group_id')],
                 'icon' => 'fa-laptop-house',
             ]);
         }

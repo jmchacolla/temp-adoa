@@ -121,7 +121,7 @@ class AdoaController extends Controller
 
     public function getListRequestsAgency($groupId) {
         $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
-        if (count($member) > 0 && $groupId == 8) {
+        if (count($member) > 0 && $groupId == config('adoa.admin_agency_group_id')) {
             $agencies = explode(',', Auth::user()->meta->agency);
             $agenciesArray = array();
             if (count($agencies) == 1 && $agencies[0] == 'ALL') {

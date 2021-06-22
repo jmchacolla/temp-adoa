@@ -8,10 +8,6 @@ use ProcessMaker\Models\ProcessRequestToken;
 
 class Redirect
 {
-    const ADMIN_GROUP_ID = 3;
-    
-    const AGENCY_GROUP_ID = 8;
-    
     private $inAdminGroup = false;
     
     private $inAgencyGroup = false;
@@ -51,8 +47,8 @@ class Redirect
     private function setGroupStatus()
     {
         $groups = Auth::user()->groups->pluck('id');
-        $this->inAdminGroup = $groups->contains(self::ADMIN_GROUP_ID);
-        $this->inAgencyGroup = $groups->contains(self::AGENCY_GROUP_ID);
+        $this->inAdminGroup = $groups->contains(config('adoa.admin_group_id'));
+        $this->inAgencyGroup = $groups->contains(config('adoa.admin_agency_group_id'));
     }
     
     private function getTask(ProcessRequest $processRequest, $userId) {
