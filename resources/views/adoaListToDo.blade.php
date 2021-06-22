@@ -11,15 +11,6 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css">
 @endsection
 @section('content')
-@if(Session::has('_alert'))
-      <meta name="alert" content="show">
-      @php
-          list($type,$message) = json_decode(Session::get('_alert'));
-          Session::forget('_alert');
-      @endphp
-      <meta name="alertVariant" content="{{$type}}">
-      <meta name="alertMessage" content="{{$message}}">
-@endif
 <div class="col-sm-12">
     <h3>To Do</h3>
     <div class="card card-body table-card table-responsive" id="app-adoa">
