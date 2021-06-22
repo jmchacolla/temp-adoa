@@ -185,6 +185,7 @@ class AdoaController extends Controller
                 'process_requests.completed_at',
                 'media.id AS file_id',
                 'media.custom_properties')
+            ->where('media.disk', 'public')
             ->where('process_requests.status', 'COMPLETED')
             ->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
             ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)

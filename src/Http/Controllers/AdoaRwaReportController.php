@@ -6,6 +6,7 @@ use ProcessMaker\Http\Resources\ApiCollection;
 use ProcessMaker\Package\Adoa\Models\AdoaUsers;
 use ProcessMaker\Package\Adoa\Models\AdoaProcessRequest;
 use ProcessMaker\Package\Adoa\Models\AdoaEmployeeAppraisal;
+use ProcessMaker\Models\EnvironmentVariable;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
@@ -19,17 +20,19 @@ use DB;
 class AdoaRwaReportController extends Controller
 {
     public function index(){
-        $userLogged = auth()->user();
-        $adoaUser = AdoaUsers::select('id', 'firstname', 'lastname', 'meta')
+        $userLogged   = auth()->user();
+        $adoaUser     = AdoaUsers::select('id', 'firstname', 'lastname', 'meta')
         ->where('id', auth()->user()->id)->get()->toArray();
-        $manager   = new AdoaUsers();
-        $isManager = $manager->isAdoaManager(auth()->user()->id);
+        $manager      = new AdoaUsers();
+        $isManager    = $manager->isAdoaManager(auth()->user()->id);
+        $agreementCollectionId = EnvironmentVariable::whereName('agreements_collection_id')->first()->value;
 
 
         return view('adoa::adoaRwaReport', [
             'adoaUser' => empty($adoaUser[0]) ? [] : $adoaUser[0],
             'isManager' => $isManager,
-            'isSysAdmin' => $userLogged->is_administrator
+            'isSysAdmin' => $userLogged->is_administrator,
+            'agreementCollectionId' => $agreementCollectionId
         ]);
     }
 

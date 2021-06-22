@@ -9,14 +9,14 @@ use ProcessMaker\Models\ProcessRequestToken;
 class Redirect
 {
     private $inAdminGroup = false;
-    
+
     private $inAgencyGroup = false;
-    
+
     public function handle($request, Closure $next)
     {
         if (Auth::check()) {
             $this->setGroupStatus();
-            
+
             if (! $this->inAdminGroup && ! $this->inAgencyGroup) {
                 switch ($request->path()) {
                     case 'tasks':
