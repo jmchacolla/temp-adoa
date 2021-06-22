@@ -1,8 +1,10 @@
 <?php
 namespace ProcessMaker\Package\Adoa;
 
+use Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use ProcessMaker\Models\Group;
 use ProcessMaker\Package\Packages\Events\PackageEvent;
 use ProcessMaker\Package\Adoa\Http\Middleware\AddToMenus;
 use ProcessMaker\Package\Adoa\Http\Middleware\Redirect;
@@ -37,6 +39,9 @@ class PackageServiceProvider extends ServiceProvider
     public function boot()
     {
         GlobalScripts::addScript('/vendor/processmaker/packages/adoa/js/checkRequestsCoachingNotes.js');
+        
+        $this->setGroupIds();
+
         if ($this->app->runningInConsole()) {
             require(__DIR__ . '/../routes/console.php');
 //            $this->commands([
@@ -85,5 +90,20 @@ class PackageServiceProvider extends ServiceProvider
             \ProcessMaker\Http\Controllers\Api\ProcessController::class,
             \ProcessMaker\Package\Adoa\Http\Controllers\Api\ProcessController::class
         );
+    }
+    
+    private function setGroupIds()
+    {
+        if (! $id = Cache::get('adoa.admin_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Administrators%')->first())->id;         
+            Cache::put('adoa.admin_group_id', $id);
+        }        
+        config(['adoa.admin_group_id' => $id]);
+
+        if (! $id = Cache::get('adoa.agency_admin_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Agency Admin%')->first())->id;         
+            Cache::put('adoa.agency_admin_group_id', $id);
+        }        
+        config(['adoa.agency_admin_group_id' => $id]);
     }
 }
