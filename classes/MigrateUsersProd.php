@@ -220,13 +220,18 @@ class MigrateUsersProd
     {
         $handle = fopen($csvPath, "r");
         $row = 0;
+        $headers = null;
         while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
             if ($row === 0) {
-                // Skip header
+                $headers = $data;
                 $row++;
                 continue;
             }
-            $callback($data);
+            $data = array_combine($headers, $data);
+            $response = $callback($data, $row);
+            if ($response === false) {
+                break;
+            }
             $row++;
         }
         fclose($handle);
@@ -241,10 +246,9 @@ class MigrateUsersProd
 
     public function client()
     {
-        $adoaHeaders = array(
-            "Accept: application/json",
-            "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
-        );
+        $adoaHeaders = [
+            "Authorization" => "Bearer 3-5738379ecfaa4e9fb2eda707779732c7"
+        ];
 
         return new \GuzzleHttp\Client([
             'headers' => $adoaHeaders

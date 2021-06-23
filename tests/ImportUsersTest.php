@@ -30,6 +30,16 @@ class ImportUsersTest extends TestCase
         });
         
         $this->assertCount(8, $data);
-        $this->assertEquals($data[3][11], 'DEPT OF ECONOMIC SECURITY');
+        $this->assertEquals($data[3]['AGENCY_NAME'], 'DEPT OF ECONOMIC SECURITY');
+        
+        // With Limit
+        $data = [];
+        $migrateUsers->getAdoaExternalUsers(function($row, $i) use (&$data) {
+            $data[] = $row;
+            if ($i > 3) { 
+                return false;
+            }
+        });
+        $this->assertCount(4, $data);
     }
 }
