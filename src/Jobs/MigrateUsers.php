@@ -2,12 +2,16 @@
 
 namespace ProcessMaker\Package\Adoa\Jobs;
 
+use GuzzleHttp\Client;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use ProcessMaker\Jobs\ThrowSignalEvent;
+use ProcessMaker\Models\User;
 
 class MigrateUsers implements ShouldQueue
 {
