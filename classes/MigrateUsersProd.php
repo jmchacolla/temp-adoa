@@ -209,29 +209,45 @@ class MigrateUsersProd
         }
     }
 
-    public function getAdoaExternalUsers()
+    public function getAdoaExternalUsers($callback)
     {
-        try {
-            $adoaHeaders = array(
-                "Accept: application/json",
-                "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
-            );
-            $url = 'https://hrsieapi.azdoa.gov/api/hrorg/PMEmployInfo.json';
+        $csvPath = $this->download('https://hrsieapi.azdoa.gov/api/hrorg/PMEmployInfo.csv');
+        $this->readCsv($csvPath, $callback);
+        unlink($csvPath);
+    }
 
-            $curl = curl_init($url);
-            curl_setopt($curl, CURLOPT_URL, $url);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $adoaHeaders);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-
-            $resp = curl_exec($curl);
-            curl_close($curl);
-
-            $userInformationList = json_decode($resp);
-            return $userInformationList;
-        } catch (Exception $error) {
-            return $response['error'] = 'There are errors in the Function: getAdoaExternalUsers ' . $error->getMessage();
+    public function readCsv($csvPath, $callback)
+    {
+        $handle = fopen($csvPath, "r");
+        $row = 0;
+        while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
+            if ($row === 0) {
+                // Skip header
+                $row++;
+                continue;
+            }
+            $callback($data);
+            $row++;
         }
+        fclose($handle);
+    }
+
+    public function download($url)
+    {
+        $tempPath = tempnam(sys_get_temp_dir(), 'import');
+        $this->client()->request('GET', $url, ['sink' => $tempPath]);
+        return $tempPath;
+    }
+
+    public function client()
+    {
+        $adoaHeaders = array(
+            "Accept: application/json",
+            "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
+        );
+
+        return new \GuzzleHttp\Client([
+            'headers' => $adoaHeaders
+        ]);
     }
 }

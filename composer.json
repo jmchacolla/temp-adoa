@@ -16,7 +16,8 @@
     },
     "autoload": {
         "psr-4": {
-            "ProcessMaker\\Package\\Adoa\\": "src"
+            "ProcessMaker\\Package\\Adoa\\": "src",
+            "Tests\\Adoa\\": "tests"
         }
     },
     "extra": {
