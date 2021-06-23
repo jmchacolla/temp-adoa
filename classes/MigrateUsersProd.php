@@ -1,222 +1,117 @@
 <?php
 namespace ProcessMaker\Adoa\classes;
 
-use ProcessMaker\Package\Adoa\Models\AdoaUsers;
-use Illuminate\Support\Facades\Hash;
 use GuzzleHttp\Client;
-use Exception;
-use DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use ProcessMaker\Models\User;
 
 class MigrateUsersProd
 {
-    public function migrateUserInformation()
+    private $users;
+    
+    private $createdUsers = 0;
+    
+    private $updatedUsers = 0;
+    
+    public function migrateUserInformation($groupIdEmployee, $groupIdManager)
     {
-        try {
-            $localUsersList = array();
-            $adoaUser = new AdoaUsers();
-            $adoaUser->inactiveAllUsers();
-            $usersList = $adoaUser->getAllUsersByEin();
-
-            if (!empty($usersList)) {
-                foreach ($usersList as $userId) {
-                    $localUsersList[$userId['username']] = $userId['id'];
-                }
-            }
-
-            $result = $this->saveUserInformation($localUsersList, 0, 0, $groupIdEmployee, $groupIdManager);
-            return $result;
-        } catch (Exception $error) {
-            return $response['error'] = 'There are errors in the Function: migrateUserInformation ' . $error->getMessage();
+        $this->loadExistingUsers();
+        $this->deactivateExistingUsers();
+        $this->importAdoaExternalUsers([$this, 'saveUserInformation']);
+        
+        return [
+            'created_users' => $this->createdUsers,
+            'updated_users' => $this->updatedUsers,
+        ];
+    }
+    
+    private function loadExistingUsers()
+    {
+        $this->users = User::select('id', 'username')->get();
+    }
+    
+    private function deactivateExistingUsers()
+    {
+        User::where('status', 'ACTIVE')
+            ->where('username', '!=', 'admin')
+            ->where('username', '!=', '_pm4_anon_user')
+            ->update(['status' => 'INACTIVE']);
+    }
+    
+    private function existingUser($import)
+    {
+        if ($user = $this->users->where('username', $import['EMPLOYEE'])->first()) {
+            return User::find($user->id);
+        } else {
+            return null;
         }
     }
-
-    public function saveUserInformation($userList, $countCreatedUsers, $countUpdatedUsers, $groupIdEmployee, $groupIdManager)
+    
+    private function generateEmail($import)
     {
-        try {
-            $adoaUsers = new AdoaUsers();
-
-            $userInformation = $this->getAdoaExternalUsers();
-
-            if (!empty($userInformation->rows)) {
-                foreach ($userInformation->rows as $externalUserInfo) {
-
-                    if (empty($userList[$externalUserInfo[0]])) {
-                        $email = $externalUserInfo[0] . '@hris.az.gov';
-                        $email = trim($email);
-
-                        $metaEmail = '';
-                        if (!empty($externalUserInfo[5])) {
-                            $metaEmail = trim($externalUserInfo[5]);
-                        }
-
-                        $metaInformationData = array(
-                            'ein' => $externalUserInfo[0],
-                            'email' => $metaEmail,
-                            'position' => $externalUserInfo[6],
-                            'manager' => $externalUserInfo[7],
-                            'super_position' => $externalUserInfo[8],
-                            'title' => $externalUserInfo[9],
-                            'agency' => $externalUserInfo[10],
-                            'agency_name' => $externalUserInfo[11],
-                            'process_level' => $externalUserInfo[12],
-                            'department' => $externalUserInfo[13],
-                            'term_date' => $externalUserInfo[14],
-                            'flsa_status' => $externalUserInfo[15]
-                        );
-                        $metaInformationData = json_encode($metaInformationData);
-
-                        $password = Hash::make('p^@)YUvVB"j4.J*F');
-                        $newUserData = array(
-                            'email' => $email,
-                            'firstname'=> $externalUserInfo[1],
-                            'lastname'=> $externalUserInfo[2],
-                            'username'=> $externalUserInfo[0],
-                            'password'=> $password,
-                            'address'=> $externalUserInfo[3],
-                            'phone'=> trim($externalUserInfo[4]),
-                            'is_administrator'=> false,
-                            'status'=> 'ACTIVE',
-                            'meta' => $metaInformationData,
-                            'created_at'=> date('Y-m-d H:i:s'),
-                        );
-
-                        $userUid = $adoaUsers->insertUser($newUserData);
-
-                        if (!empty($userUid)) {
-                            if ($externalUserInfo[7] == 'Y') {
-                                $groupMemberManager = array(
-                                    'group_id' => $groupIdManager,
-                                    'member_type' => 'ProcessMaker\Models\User',
-                                    'member_id' => $userUid,
-                                    'created_at' => date('Y-m-d H:i:s')
-                                );
-
-                                DB::table('group_members')
-                                ->insert($groupMemberManager);
-                            }
-
-                            $groupMemberEmployee = array(
-                                'group_id' => $groupIdEmployee,
-                                'member_type' => 'ProcessMaker\Models\User',
-                                'member_id' => $userUid,
-                                'created_at' => date('Y-m-d H:i:s')
-                            );
-
-                            DB::table('group_members')
-                            ->insert($groupMemberEmployee);
-
-                            $countCreatedUsers = $countCreatedUsers + 1;
-                        }
-                    } elseif (!empty($userList[$externalUserInfo[0]])) {
-
-                        $email = $externalUserInfo[0] . '@hris.az.gov';
-                        $email = trim($email);
-
-                        $metaEmail = '';
-                        if (!empty($externalUserInfo[5])) {
-                            $metaEmail = trim($externalUserInfo[5]);
-                        }
-
-                        $metaInformationData = array(
-                            'ein' => $externalUserInfo[0],
-                            'email' => $metaEmail,
-                            'position' => $externalUserInfo[6],
-                            'manager' => $externalUserInfo[7],
-                            'super_position' => $externalUserInfo[8],
-                            'title' => $externalUserInfo[9],
-                            'agency' => $externalUserInfo[10],
-                            'agency_name' => $externalUserInfo[11],
-                            'process_level' => $externalUserInfo[12],
-                            'department' => $externalUserInfo[13],
-                            'term_date' => $externalUserInfo[14],
-                            'flsa_status' => $externalUserInfo[15]
-                        );
-                        $metaInformationData = json_encode($metaInformationData);
-
-                        $updateUserData = array (
-                            'id' => $userList[$externalUserInfo[0]],
-                            'email' => $email,
-                            'firstname'=> $externalUserInfo[1],
-                            'lastname'=> $externalUserInfo[2],
-                            'address'=> $externalUserInfo[3],
-                            'phone'=> trim($externalUserInfo[4]),
-                            'is_administrator'=> false,
-                            'status'=> 'ACTIVE',
-                            'meta' => $metaInformationData,
-                            'updated_at'=> date('Y-m-d H:i:s'),
-                        );
-                        $response = $adoaUsers->updateUser($updateUserData);
-
-                        if ($externalUserInfo[7] == 'Y') {
-                            $groupManager = DB::table('group_members')
-                                ->where('member_id', $userList[$externalUserInfo[0]])
-                                ->where('group_id', $groupIdManager)
-                                ->get();
-
-                            if(count($groupManager) == 0) {
-                                $groupMemberManager = array(
-                                    'group_id' => $groupIdManager,
-                                    'member_type' => 'ProcessMaker\Models\User',
-                                    'member_id' => $userList[$externalUserInfo[0]],
-                                    'created_at' => date('Y-m-d H:i:s')
-                                );
-
-                                DB::table('group_members')
-                                ->insert($groupMemberManager);
-                            }
-                        } else {
-                            $groupManager = DB::table('group_members')
-                                ->where('member_id', $userList[$externalUserInfo[0]])
-                                ->where('group_id', $groupIdManager)
-                                ->get();
-
-                            if(count($groupManager) > 0) {
-                                DB::table('group_members')
-                                ->where('member_id', $userList[$externalUserInfo[0]])
-                                ->delete();
-                            }
-                        }
-
-                        $groupEmployee = DB::table('group_members')
-                            ->where('member_id', $userList[$externalUserInfo[0]])
-                            ->where('group_id', $groupIdEmployee)
-                            ->get();
-
-                        if(count($groupEmployee) == 0) {
-                            $groupMemberEmployee = array(
-                                'group_id' => $groupIdEmployee,
-                                'member_type' => 'ProcessMaker\Models\User',
-                                'member_id' => $userList[$externalUserInfo[0]],
-                                'created_at' => date('Y-m-d H:i:s')
-                            );
-
-                            DB::table('group_members')
-                            ->insert($groupMemberEmployee);
-                        }
-
-                        if ($response == 1) {
-                            $countUpdatedUsers = $countUpdatedUsers + 1;
-                        }
-                    }
-                }
-            }
-            return $result = array(
-                'created_users' => $countCreatedUsers,
-                'updated_users' => $countUpdatedUsers,
-            );
-        } catch (Exception $error) {
-            return $response['error'] = 'There are errors in the Function: saveUserInformation ' . $error->getMessage();
+        return trim("{$import['EMPLOYEE']}@hris.az.gov");
+    }
+    
+    private function generatePassword()
+    {
+        return Hash::make(Str::random(20));
         }
+    
+    private function saveUserInformation($import)
+    {
+        if (! $user = $this->existingUser($import)) {
+            $user = new User;
+            $this->createdUsers++;
+        } else {
+            $this->updatedUsers++;
+        }
+        
+        $user->fill([
+            'email' => $this->generateEmail($import),
+            'firstname' => trim($import['FIRST_NAME']),
+            'lastname' => trim($import['LAST_NAME']),
+            'username' => trim($import['EMPLOYEE']),
+            'password' => $this->generatePassword(),
+            'address' => trim($import['ADDRESS']),
+            'phone' => trim($import['WORK_PHONE']),
+            'is_administrator' => false,
+            'status' => 'ACTIVE',
+            'meta' => [
+                'ein' => trim($import['EMPLOYEE']),
+                'email' => trim($import['WORK_EMAIL']),
+                'position' => trim($import['POSITION']),
+                'manager' => trim($import['MANAGER']),
+                'super_position' => trim($import['SUPER_POSITION']),
+                'title' => trim($import['TITLE']),
+                'agency' => trim($import['AGENCY']),
+                'agency_name' => trim($import['AGENCY_NAME']),
+                'process_level' => trim($import['PROCESS_LEVEL']),
+                'department' => trim($import['DEPARTMENT']),
+                'term_date' => trim($import['TERM_DATE']),
+                'flsa_status' => trim($import['FLSA_STATUS']),
+            ],
+        ]);
+        
+        $user->save();
+        
+        if (trim($import['MANAGER']) == 'Y') {
+            $groups = [config('adoa.manager_group_id')];
+        } else {
+            $groups = [config('adoa.employee_group_id')];
+        }
+        
+        $user->groups()->sync($groups);
     }
 
-    public function getAdoaExternalUsers($callback)
+    public function importAdoaExternalUsers($callback)
     {
         $csvPath = $this->download('http://pmdev41.nossl/adoa-users.csv');
         $this->readCsv($csvPath, $callback);
         unlink($csvPath);
     }
 
-    public function readCsv($csvPath, $callback)
+    private function readCsv($csvPath, $callback)
     {
         $handle = fopen($csvPath, "r");
         $row = 0;
@@ -237,7 +132,7 @@ class MigrateUsersProd
         fclose($handle);
     }
 
-    public function download($url)
+    private function download($url)
     {
         $tempPath = tempnam(sys_get_temp_dir(), 'import');
         $this->client()->request('GET', $url, ['sink' => $tempPath]);
@@ -250,7 +145,7 @@ class MigrateUsersProd
             "Authorization" => "Bearer 3-5738379ecfaa4e9fb2eda707779732c7"
         ];
 
-        return new \GuzzleHttp\Client([
+        return new Client([
             'headers' => $adoaHeaders
         ]);
     }
