@@ -89,7 +89,7 @@ class MigrateUsers implements ShouldQueue
     private function generatePassword()
     {
         return Hash::make(Str::random(20));
-        }
+    }
     
     private function saveUserInformation($import)
     {
