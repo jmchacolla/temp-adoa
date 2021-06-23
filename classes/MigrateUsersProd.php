@@ -106,7 +106,7 @@ class MigrateUsersProd
 
     public function importAdoaExternalUsers($callback)
     {
-        $csvPath = $this->download('http://pmdev41.nossl/adoa-users.csv');
+        $csvPath = $this->download('https://hrsieapi.azdoa.gov/api/hrorg/PMEmployInfo.csv');
         $this->readCsv($csvPath, $callback);
         unlink($csvPath);
     }
