@@ -14,34 +14,25 @@ use \DB;
 
 class AdoaMigrateUsersController extends Controller
 {
-    public function migratedUsersProd($groupIdEmployee, $groupIdManager)
+    public function migratedUsersProd()
     {
         require_once dirname(__DIR__, 3) . '/classes/MigrateUsersProd.php';
-        ini_set('memory_limit', '-1');
-        ini_set('set_time_limit', 0);
-        ini_set('max_execution_time', 0);
-        $tiempo = microtime(true);
         $migrateUsers = new MigrateUsersProd();
-        $result = $migrateUsers->migrateUserInformation($groupIdEmployee, $groupIdManager);
-        echo round($tiempo, 2);
-        dd('finalizado', $result);
+        $result = $migrateUsers->migrateUserInformation();
+        return ['result' => $result];
     }
 
-    public function migratedUsersDev($groupIdEmployee, $groupIdManager)
+    public function migratedUsersDev()
     {
         require_once dirname(__DIR__, 3) . '/classes/MigrateUsersDev.php';
-        ini_set('memory_limit', '-1');
-        ini_set('set_time_limit', 0);
-        ini_set('max_execution_time', 0);
-        $tiempo = microtime(true);
         $migrateUsers = new MigrateUsersDev();
-        $result = $migrateUsers->migrateUserInformation($groupIdEmployee, $groupIdManager);
-        echo round($tiempo, 2);
-        dd('finalizado', $result);
+        $result = $migrateUsers->migrateUserInformation();
+        return ['result' => $result];
     }
 
-    public function migrateAdministrators($groupId)
+    public function migrateAdministrators()
     {
+        $groupId = config('adoa.admin_group_id');
         require_once dirname(__DIR__, 3) . '/classes/MigrateAdministrators.php';
         ini_set('memory_limit', '-1');
         ini_set('set_time_limit', 0);
@@ -49,7 +40,6 @@ class AdoaMigrateUsersController extends Controller
         $tiempo = microtime(true);
         $migrateUsers = new MigrateAdministrators();
         $result = $migrateUsers->migrateAdminInformation($groupId);
-        echo round($tiempo, 2);
-        dd('finalizado', $result);
+        return $result;
     }
 }

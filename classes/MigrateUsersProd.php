@@ -9,7 +9,7 @@ use DB;
 
 class MigrateUsersProd
 {
-    public function migrateUserInformation($groupIdEmployee, $groupIdManager)
+    public function migrateUserInformation()
     {
         try {
             $localUsersList = array();
@@ -211,7 +211,7 @@ class MigrateUsersProd
 
     public function getAdoaExternalUsers($callback)
     {
-        $csvPath = $this->download('https://hrsieapi.azdoa.gov/api/hrorg/PMEmployInfo.csv');
+        $csvPath = $this->download('http://pmdev41.nossl/adoa-users.csv');
         $this->readCsv($csvPath, $callback);
         unlink($csvPath);
     }

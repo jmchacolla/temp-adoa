@@ -19,11 +19,3 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('adoa/rwa-report', 'AdoaRwaReportController@index')->name('package.adoa.tab.rwa-report');
 
 });
-
-Route::get('adoa/users/prod/{groupIdEmployee}/{groupIdManager}', 'AdoaMigrateUsersController@migratedUsersProd');
-Route::get('adoa/users/dev/{groupIdEmployee}/{groupIdManager}', 'AdoaMigrateUsersController@migratedUsersDev');
-Route::get('adoa/users/admin/{groupId}', 'AdoaMigrateUsersController@migrateAdministrators');
-Route::get('adoa/deleteUsers', 'AdoaMigrateUsersController@deleteUsers');
-Route::get('adoa/user-information-data/{user_id}', 'AdoaUserInformationController@getUserInformationByUserId');
-Route::get('adoa/updateMigratedUsers', 'AdoaMigrateUsersController@updateMigratedUsers');
-Route::get('adoa/test', 'AdoaUsersController@test');
