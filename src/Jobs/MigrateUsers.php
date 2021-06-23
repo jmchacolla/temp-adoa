@@ -22,15 +22,17 @@ class MigrateUsers implements ShouldQueue
     private $createdUsers = 0;
     
     private $updatedUsers = 0;
+    
+    private $url;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($url)
     {
-        //
+        $this->url = $url;
     }
 
     /**
@@ -65,7 +67,7 @@ class MigrateUsers implements ShouldQueue
     
     public function importAdoaExternalUsers($callback)
     {
-        $csvPath = $this->download('https://hrsieapi.azdoa.gov/api/hrorg/PMEmployInfo.csv');
+        $csvPath = $this->download();
         $this->readCsv($csvPath, $callback);
         unlink($csvPath);
     }
@@ -156,10 +158,10 @@ class MigrateUsers implements ShouldQueue
         fclose($handle);
     }
 
-    private function download($url)
+    private function download()
     {
         $tempPath = tempnam(sys_get_temp_dir(), 'import');
-        $this->client()->request('GET', $url, ['sink' => $tempPath]);
+        $this->client()->request('GET', $this->url, ['sink' => $tempPath]);
         return $tempPath;
     }
 
