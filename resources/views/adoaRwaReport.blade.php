@@ -299,7 +299,7 @@
                     getRwaList() {
                         ProcessMaker.apiClient
                         .get(
-                            '/collections/' + this.agreementCollectionId + '/records?pmql=((data.USER_ID = "' + this.adoaEmployeeSelected +'") AND (data.ADOA_RWA_REMOTE_AGREEMENT_VALID = "Y"))'
+                            '/collections/' + this.agreementCollectionId + '/records?pmql=((data.USER_ID = "' + this.adoaEmployeeSelected +'") AND (data.STATUS = "COMPLETED"))'
                         )
                         .then(response => {
                             this.rwaList = response.data.data;
