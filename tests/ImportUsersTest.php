@@ -25,7 +25,7 @@ class ImportUsersTest extends TestCase
         $migrateUsers->shouldReceive('client')->andReturn($clientMock);
 
         $data = [];
-        $migrateUsers->getAdoaExternalUsers(function($row) use (&$data) {
+        $migrateUsers->importAdoaExternalUsers(function($row) use (&$data) {
             $data[] = $row;
         });
         
@@ -34,7 +34,7 @@ class ImportUsersTest extends TestCase
         
         // With Limit
         $data = [];
-        $migrateUsers->getAdoaExternalUsers(function($row, $i) use (&$data) {
+        $migrateUsers->importAdoaExternalUsers(function($row, $i) use (&$data) {
             $data[] = $row;
             if ($i > 3) { 
                 return false;
