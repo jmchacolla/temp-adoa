@@ -17,7 +17,7 @@ class MigrateUsers implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private $users;
+    private $users = [];
     
     private $createdUsers = 0;
     
@@ -61,7 +61,9 @@ class MigrateUsers implements ShouldQueue
     
     private function loadExistingUsers()
     {
-        $this->users = User::select('id', 'username')->get();
+        User::select('id', 'username')->get()->each(function($user) {
+            $this->users[$user->id] = $user->username;
+        });
     }
     
     private function deactivateExistingUsers()
@@ -79,12 +81,16 @@ class MigrateUsers implements ShouldQueue
         unlink($csvPath);
     }
     
-    private function existingUser($import)
+    private function newOrExistingUser($import)
     {
-        if ($user = $this->users->where('username', $import['EMPLOYEE'])->first()) {
-            return User::find($user->id);
+        $id = array_search($import['EMPLOYEE'], $this->users);
+        
+        if ($id !== false) {
+            $this->updatedUsers++;
+            return User::find($id);
         } else {
-            return null;
+            $this->createdUsers++;
+            return new User;
         }
     }
     
@@ -100,12 +106,7 @@ class MigrateUsers implements ShouldQueue
     
     private function saveUserInformation($import)
     {
-        if (! $user = $this->existingUser($import)) {
-            $user = new User;
-            $this->createdUsers++;
-        } else {
-            $this->updatedUsers++;
-        }
+        $user = $this->newOrExistingUser($import);
         
         $user->fill([
             'email' => $this->generateEmail($import),
