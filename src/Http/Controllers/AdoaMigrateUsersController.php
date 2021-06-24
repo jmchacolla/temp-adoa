@@ -19,7 +19,7 @@ class AdoaMigrateUsersController extends Controller
 
     public function migratedUsersDev()
     {
-        MigrateUsers::dispatch('https://hrsieapitest.azdoa.gov/api/hrorg/PMEmployInfo.json');
+        MigrateUsers::dispatch('https://hrsieapitest.azdoa.gov/api/hrorg/PMEmployInfo.csv');
         return response(['status' => true], 201);
     }
 
