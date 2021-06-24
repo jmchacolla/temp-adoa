@@ -3,45 +3,29 @@
 namespace ProcessMaker\Package\Adoa\Http\Controllers;
 use ProcessMaker\Http\Controllers\Controller;
 use ProcessMaker\Http\Resources\ApiCollection;
-use ProcessMaker\Adoa\classes\MigrateUsersProd;
-use ProcessMaker\Adoa\classes\MigrateUsersDev;
+use ProcessMaker\Package\Adoa\Jobs\MigrateUsers;
 use ProcessMaker\Adoa\classes\MigrateAdministrators;
 use RBAC;
 use Illuminate\Http\Request;
 use URL;
-use \DateTime;
-use \DB;
 
 class AdoaMigrateUsersController extends Controller
 {
-    public function migratedUsersProd($groupIdEmployee, $groupIdManager)
+    public function migratedUsersProd()
     {
-        require_once dirname(__DIR__, 3) . '/classes/MigrateUsersProd.php';
-        ini_set('memory_limit', '-1');
-        ini_set('set_time_limit', 0);
-        ini_set('max_execution_time', 0);
-        $tiempo = microtime(true);
-        $migrateUsers = new MigrateUsersProd();
-        $result = $migrateUsers->migrateUserInformation($groupIdEmployee, $groupIdManager);
-        echo round($tiempo, 2);
-        dd('finalizado', $result);
+        MigrateUsers::dispatch('https://hrsieapi.azdoa.gov/api/hrorg/PMEmployInfo.csv');
+        return response(['status' => true], 201);
     }
 
-    public function migratedUsersDev($groupIdEmployee, $groupIdManager)
+    public function migratedUsersDev()
     {
-        require_once dirname(__DIR__, 3) . '/classes/MigrateUsersDev.php';
-        ini_set('memory_limit', '-1');
-        ini_set('set_time_limit', 0);
-        ini_set('max_execution_time', 0);
-        $tiempo = microtime(true);
-        $migrateUsers = new MigrateUsersDev();
-        $result = $migrateUsers->migrateUserInformation($groupIdEmployee, $groupIdManager);
-        echo round($tiempo, 2);
-        dd('finalizado', $result);
+        MigrateUsers::dispatch('https://hrsieapitest.azdoa.gov/api/hrorg/PMEmployInfo.csv');
+        return response(['status' => true], 201);
     }
 
-    public function migrateAdministrators($groupId)
+    public function migrateAdministrators()
     {
+        $groupId = config('adoa.admin_group_id');
         require_once dirname(__DIR__, 3) . '/classes/MigrateAdministrators.php';
         ini_set('memory_limit', '-1');
         ini_set('set_time_limit', 0);
@@ -49,7 +33,6 @@ class AdoaMigrateUsersController extends Controller
         $tiempo = microtime(true);
         $migrateUsers = new MigrateAdministrators();
         $result = $migrateUsers->migrateAdminInformation($groupId);
-        echo round($tiempo, 2);
-        dd('finalizado', $result);
+        return $result;
     }
 }

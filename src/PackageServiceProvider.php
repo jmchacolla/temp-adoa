@@ -99,6 +99,18 @@ class PackageServiceProvider extends ServiceProvider
             Cache::put('adoa.admin_group_id', $id);
         }        
         config(['adoa.admin_group_id' => $id]);
+        
+        if (! $id = Cache::get('adoa.employee_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Employees%')->first())->id;         
+            Cache::put('adoa.employee_group_id', $id);
+        }        
+        config(['adoa.employee_group_id' => $id]);
+        
+        if (! $id = Cache::get('adoa.manager_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Managers%')->first())->id;         
+            Cache::put('adoa.manager_group_id', $id);
+        }        
+        config(['adoa.manager_group_id' => $id]);
 
         if (! $id = Cache::get('adoa.agency_admin_group_id')) {
             $id = optional(Group::where('name', 'LIKE', '%Agency Admin%')->first())->id;         
