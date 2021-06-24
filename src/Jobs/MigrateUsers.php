@@ -10,8 +10,10 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Log;
 use ProcessMaker\Jobs\ThrowSignalEvent;
 use ProcessMaker\Models\User;
+use Throwable;
 
 class MigrateUsers implements ShouldQueue
 {
@@ -134,7 +136,14 @@ class MigrateUsers implements ShouldQueue
             ],
         ]);
         
-        $user->save();
+        try {
+            $user->save();
+        } catch (Throwable $e) {
+            Log::error('Unable to import ADOA user ' . $import['EMPLOYEE'], [
+                'error' => $e->getMessage(),
+                'adoa_user' => $import,
+            ]);
+        }
         
         if (trim($import['MANAGER']) == 'Y') {
             $groups = [config('adoa.manager_group_id')];
@@ -142,7 +151,14 @@ class MigrateUsers implements ShouldQueue
             $groups = [config('adoa.employee_group_id')];
         }
         
-        $user->groups()->sync($groups);
+        try {
+            $user->groups()->sync($groups);
+        } catch (Throwable $e) {
+            Log::error('Unable to update groups for ADOA user ' . $import['EMPLOYEE'], [
+                'error' => $e->getMessage(),
+                'adoa_user' => $import,
+            ]);
+        }
     }
 
     private function readCsv($csvPath, $callback)
