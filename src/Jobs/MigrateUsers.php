@@ -111,8 +111,6 @@ class MigrateUsers implements ShouldQueue
     
     private function saveUserInformation($import)
     {
-        if ($this->updatedUsers % 100 == 0) { \Log::debug('Updated users: ' . $this->updatedUsers); }
-
         $user = $this->newOrExistingUser($import);
         
         $user->fill([
