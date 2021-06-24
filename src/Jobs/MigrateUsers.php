@@ -145,10 +145,11 @@ class MigrateUsers implements ShouldQueue
             ]);
         }
         
+        $groups = [];
+        $groups[] = config('adoa.employee_group_id');
+        
         if (trim($import['MANAGER']) == 'Y') {
-            $groups = [config('adoa.manager_group_id')];
-        } else {
-            $groups = [config('adoa.employee_group_id')];
+            $groups[] = config('adoa.manager_group_id');
         }
         
         try {
