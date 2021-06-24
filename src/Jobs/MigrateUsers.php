@@ -25,6 +25,8 @@ class MigrateUsers implements ShouldQueue
     
     private $updatedUsers = 0;
     
+    private $password;
+    
     private $url;
     
     /**
@@ -51,6 +53,7 @@ class MigrateUsers implements ShouldQueue
      */
     public function handle()
     {
+        $this->generatePassword();
         $this->loadExistingUsers();
         $this->deactivateExistingUsers();
         $this->importAdoaExternalUsers([$this, 'saveUserInformation']);
@@ -98,16 +101,18 @@ class MigrateUsers implements ShouldQueue
     
     private function generateEmail($import)
     {
-        return trim("{$import['EMPLOYEE']}@hris.az.gov");
+        return trim($import['EMPLOYEE']) . '@hris.az.gov';
     }
     
     private function generatePassword()
     {
-        return Hash::make(Str::random(20));
+        $this->password = Hash::make(Str::random(20));
     }
     
     private function saveUserInformation($import)
     {
+        if ($this->updatedUsers % 100 == 0) { \Log::debug('Updated users: ' . $this->updatedUsers); }
+
         $user = $this->newOrExistingUser($import);
         
         $user->fill([
@@ -115,7 +120,7 @@ class MigrateUsers implements ShouldQueue
             'firstname' => trim($import['FIRST_NAME']),
             'lastname' => trim($import['LAST_NAME']),
             'username' => trim($import['EMPLOYEE']),
-            'password' => $this->generatePassword(),
+            'password' => $this->password,
             'address' => trim($import['ADDRESS']),
             'phone' => trim($import['WORK_PHONE']),
             'is_administrator' => false,
