@@ -132,7 +132,9 @@
                                         <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
                                         <td class="text-left">{{ $request->request_status }}</td>
                                         <td class="text-right">
+                                            @if (!empty($request->task_id))
                                             <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endif
