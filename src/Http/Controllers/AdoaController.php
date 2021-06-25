@@ -103,7 +103,8 @@ class AdoaController extends Controller
                 'media.id AS file_id',
                 'media.custom_properties',
                 'users.firstname',
-                'users.lastname')
+                'users.lastname',
+                'users.id as user_id')
             ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
             ->where('process_requests.user_id', Auth::user()->id)
