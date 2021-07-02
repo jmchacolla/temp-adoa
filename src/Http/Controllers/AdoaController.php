@@ -192,6 +192,7 @@ class AdoaController extends Controller
             ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
             ->orWhere('process_requests.data->SUPERVISOR_EIN', Auth::user()->username)
             ->orWhere('process_requests.data->UPLINE_EIN', Auth::user()->username)
+            ->where('media.custom_properties->createdBy', 'null')
             ->orderBy('process_requests.id', 'desc')
             ->get();
 
