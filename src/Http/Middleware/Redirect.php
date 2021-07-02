@@ -30,11 +30,11 @@ class Redirect
                         if ($processRequest['user_id'] == $userId && isset($processRequest['data']['pdf'])) {
                             return redirect()->route('package.adoa.getPdfFile', ['request' => $processRequest->id]);
                         }
-                        if ($processRequest['user_id'] != $userId) {
-                            return redirect()->route('package.adoa.listRequests');
-                        }
                         if ($task = $this->getTask($processRequest, $userId)) {
                             return redirect()->route('tasks.edit', ['task' => $task->id]);
+                        }
+                        if ($processRequest['user_id'] != $userId) {
+                            return redirect()->route('package.adoa.listRequests');
                         }
                     }
                 }
@@ -50,7 +50,7 @@ class Redirect
         $this->inAdminGroup = $groups->contains(config('adoa.admin_group_id'));
         $this->inAgencyGroup = $groups->contains(config('adoa.agency_admin_group_id'));
     }
-    
+
     private function getTask(ProcessRequest $processRequest, $userId) {
         return ProcessRequestToken::where('process_request_id', $processRequest->id)
             ->where('element_type', 'task')
