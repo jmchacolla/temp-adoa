@@ -108,11 +108,13 @@ class MigrateUsers implements ShouldQueue
     {
         $this->password = Hash::make(Str::random(20));
     }
-    
+
     private function saveUserInformation($import)
     {
         $user = $this->newOrExistingUser($import);
-        
+
+        $agencyInfo = $this->getAgencyInformation(trim($import['AGENCY']));
+
         $user->fill([
             'email' => $this->generateEmail($import),
             'firstname' => trim($import['FIRST_NAME']),
@@ -136,9 +138,11 @@ class MigrateUsers implements ShouldQueue
                 'department' => trim($import['DEPARTMENT']),
                 'term_date' => trim($import['TERM_DATE']),
                 'flsa_status' => trim($import['FLSA_STATUS']),
+                'cycle_begin' => (!empty($agencyInfo->rows[0][1])) ? $agencyInfo->rows[0][1] : '',
+                'cycle_end' => (!empty($agencyInfo->rows[0][2])) ? $agencyInfo->rows[0][2] : ''
             ],
         ]);
-        
+
         try {
             $user->save();
         } catch (Throwable $e) {
@@ -202,5 +206,31 @@ class MigrateUsers implements ShouldQueue
         return new Client([
             'headers' => $adoaHeaders
         ]);
+    }
+
+    public function getAgencyInformation($agency)
+    {
+        try {
+            $adoaHeaders = array(
+                "Accept: application/json",
+                "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
+            );
+            $url = 'https://hrsieapitest.azdoa.gov/api/hrorg/AzPerformAgencyCFG.json?agency=' . $agency;
+
+            $curl = curl_init($url);
+            curl_setopt($curl, CURLOPT_URL, $url);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $adoaHeaders);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+            $resp = curl_exec($curl);
+            curl_close($curl);
+
+            $agencyInformation = json_decode($resp);
+            return $agencyInformation;
+        } catch (Exception $error) {
+            return $response['error'] = 'There are errors in the Function: getAdoaExternalUsers ' . $error->getMessage();
+        }
     }
 }
