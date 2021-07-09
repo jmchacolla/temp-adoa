@@ -322,7 +322,7 @@
                             this.dataTable = $('#rwaList').DataTable({
                                 "responsive": true,
                                 "processing": true,
-                                "order": [[ 1, "asc" ]],
+                                "order": [[ 1, "desc" ]],
                                 "data" : app.rwaList,
                                 "columns": [
                                     { "title": "Request No.",  "data": "data.REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
@@ -332,6 +332,14 @@
                                         }
                                     },
                                     { "title": "EIN", "data": "data.ADOA_RWA_EIN", "defaultContent": "", "sortable": false, "class": "text-center"},
+                                    { "title": "Type", "data": "data.ADOA_RWA_TYPE_REQUEST", "defaultContent": "", "sortable": false, "class": "text-center",
+                                        "render":function (data, type, row) {
+                                            if (row.data.ADOA_RWA_TYPE_REQUEST == 'NEW') {
+                                                return '<span class="badge badge-info" style="background-color: #71A2D4 !important;">NEW</span>';
+                                            }
+                                            return '<span class="badge badge-secondary">TERMINATE</span>';
+                                        }
+                                    },
                                     { "title": "From", "data": "data.ADOA_RWA_REMOTE_AGREEMENT_START_DATE", "defaultContent": "", "class": "text-center"},
                                     { "title": "To", "data": "data.ADOA_RWA_REMOTE_AGREEMENT_END_DATE", "defaultContent": "", "class": "text-center"},
                                     {
