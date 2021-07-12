@@ -322,7 +322,7 @@
                             this.dataTable = $('#rwaList').DataTable({
                                 "responsive": true,
                                 "processing": true,
-                                "order": [[ 1, "desc" ]],
+                                "order": [[ 0, "desc" ]],
                                 "data" : app.rwaList,
                                 "columns": [
                                     { "title": "Request No.",  "data": "data.REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },

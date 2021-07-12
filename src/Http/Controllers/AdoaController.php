@@ -149,6 +149,7 @@ class AdoaController extends Controller
                         'users.lastname')
                     ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
                     ->whereIn('users.meta->agency', $agenciesArray)
+                    ->where('process_requests.callable_id', 'ProcessId')
                     ->orderBy('process_requests.id', 'desc')
                     ->get();
             } else {
@@ -166,6 +167,7 @@ class AdoaController extends Controller
                         'users.firstname',
                         'users.lastname')
                     ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
+                    ->where('process_requests.callable_id', 'ProcessId')
                     ->orderBy('process_requests.id', 'desc')
                     ->get();
             }
