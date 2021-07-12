@@ -113,7 +113,7 @@ class MigrateUsers implements ShouldQueue
     {
         $user = $this->newOrExistingUser($import);
 
-        $agencyInfo = $this->getAgencyInformation(trim($import['AGENCY']));
+        //$agencyInfo = $this->getAgencyInformation(trim($import['AGENCY']));
 
         $user->fill([
             'email' => $this->generateEmail($import),
@@ -137,9 +137,9 @@ class MigrateUsers implements ShouldQueue
                 'process_level' => trim($import['PROCESS_LEVEL']),
                 'department' => trim($import['DEPARTMENT']),
                 'term_date' => trim($import['TERM_DATE']),
-                'flsa_status' => trim($import['FLSA_STATUS']),
-                'cycle_begin' => (!empty($agencyInfo->rows[0][1])) ? $agencyInfo->rows[0][1] : '',
-                'cycle_end' => (!empty($agencyInfo->rows[0][2])) ? $agencyInfo->rows[0][2] : ''
+                'flsa_status' => trim($import['FLSA_STATUS'])
+                //'cycle_begin' => (!empty($agencyInfo->rows[0][1])) ? $agencyInfo->rows[0][1] : '',
+                //'cycle_end' => (!empty($agencyInfo->rows[0][2])) ? $agencyInfo->rows[0][2] : ''
             ],
         ]);
 
@@ -208,7 +208,7 @@ class MigrateUsers implements ShouldQueue
         ]);
     }
 
-    public function getAgencyInformation($agency)
+    /*public function getAgencyInformation($agency)
     {
         try {
             $adoaHeaders = array(
@@ -232,5 +232,5 @@ class MigrateUsers implements ShouldQueue
         } catch (Exception $error) {
             return $response['error'] = 'There are errors in the Function: getAdoaExternalUsers ' . $error->getMessage();
         }
-    }
+    }*/
 }

@@ -30,6 +30,9 @@ class Redirect
                         if ($processRequest['user_id'] == $userId && isset($processRequest['data']['pdf'])) {
                             return redirect()->route('package.adoa.getPdfFile', ['request' => $processRequest->id]);
                         }
+                        if (!isset($processRequest['data']['pdf']) && $processRequest['status'] == 'COMPLETED') {
+                            return redirect()->route('package.adoa.listToDo');
+                        }
                         if ($task = $this->getTask($processRequest, $userId)) {
                             return redirect()->route('tasks.edit', ['task' => $task->id]);
                         }
