@@ -9,7 +9,6 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::resource('adoa/user-information', 'AdoaUserInformationController');
     Route::resource('adoa/type-appraisal', 'AdoaTypeAppraisalDetailController');
     Route::post('adoa/employee-appraisal', 'AdoaEmployeeAppraisalController@store');
-    Route::get('adoa/employee-appraisal', 'AdoaEmployeeAppraisalController@getEmployeeAppraisalByUserId');
 	Route::get('adoa/get-request-by-user/{process_id}/{user_id}', 'AdoaController@getRequestByProcessAndUser');
 	Route::get('adoa/user-information-data/{user_id}', 'AdoaUserInformationController@getUserInformationByUserId');
     Route::get('getenvs', 'AdoaController@getEnvs')->name('getenvs');

@@ -4,17 +4,6 @@
     @include('layouts.sidebar', ['sidebar'=> Menu::get('sidebar_request')])
 @endsection
 @section('css')
-    <script>
-        window.temp_define = window['define'];
-        window['define']  = undefined;
-    </script>
-    <!-- Sugest  selectpicker -->
-    {{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/js/select2.min.js" defer></script>
-    <link href="https://rawgit.com/select2/select2/master/dist/css/select2.min.css" rel="stylesheet"/> --}}
-    <!-- /Sugest selectpicker -->
-    <script>
-        window['define'] = window.temp_define;
-    </script>
 
     <link rel="stylesheet" href="{{mix('/css/package.css', 'vendor/processmaker/packages/adoa')}}">
     <style>
@@ -266,22 +255,23 @@
                         agencyName : '',
                         dataTable: '',
                         documents : [
-                            {'id' : 1, 'description' : 'My Coaching Note' },
-                            {'id' : 2, 'description' : 'Coaching Note for My Direct Report' },
-                            {'id' : 3, 'description' : 'Self-Appraisal' },
-                            {'id' : 4, 'description' : 'Informal Appraisal' },
-                            {'id' : 5, 'description' : 'Formal Employee Appraisal' }
+                            {'id' : 'MY_COACHING_NOTES', 'description' : 'My Coaching Note' },
+                            {'id' : 'COACHING_NOTES_MANAGER', 'description' : 'Coaching Note for My Direct Report' },
+                            {'id' : 'SELF_APPRAISAL', 'description' : 'Self-Appraisal' },
+                            {'id' : 'INFORMAL_APPRAISAL', 'description' : 'Informal Appraisal' },
+                            {'id' : 'FORMAL_APPRAISAL', 'description' : 'Formal Employee Appraisal' }
                         ],
                         documentsSelected : [],
                         allPerformance :false,
                         initDate :'',
-                        endDate : '',
+                        endDate : new Date().toISOString().slice(0, 10),
                         appraisalList : [],
                         showList : false,
                         currentUserId : {{ auth()->user()->id }},
                         isManager: {{ empty($isManager) ? 'false' : $isManager }},
                         isSysAdmin: {{ empty($isSysAdmin) ? 'false' : $isSysAdmin }},
-                        loading:false
+                        loading:false,
+                        collectionId: {{$collectionId}}
                     }
                 },
                 methods : {
@@ -381,29 +371,31 @@
                     },
                     checkAllDocuments(event) {
                         let isChecked = event.target.checked;
-                        this.documentsSelected = isChecked ? [1,2,3,4,5] : [];
+                        this.documentsSelected = isChecked ? ['MY_COACHING_NOTES', 'COACHING_NOTES_MANAGER', 'SELF_APPRAISAL', 'INFORMAL_APPRAISAL', 'FORMAL_APPRAISAL'] : [];
                     },
                     uncheckAllPerformance(event) {
                         let isthisChecked = event.target.checked;
                         this.allPerformance = false;
                     },
                     getAppraisalList() {
+                        let initDate = this.initDate + ' 00:00:00';
+                        let endDate  = this.endDate + ' 23:59:59';
+                        let pmql = '';
+                        pmql += '(data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected+ '") AND (data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected + '") ';
+                        pmql += 'AND (data.DATE>"' + initDate + '")';
+                        pmql += 'AND (data.DATE<"' + endDate + '")';
+                        let appraisalSelected = '';
+                        this.documentsSelected.forEach(function(appraisalType){
+                            appraisalSelected += 'data.AZP_PROCESS like "' + appraisalType + '" or ';
+
+                        });
+                        let lastIndex = appraisalSelected.lastIndexOf("or ");
+                        appraisalSelected = appraisalSelected.substring(0, lastIndex);
+                        let uri = decodeURI('/collections/' + this.collectionId + '/records?pmql=(' + pmql + ' AND (' + appraisalSelected + '))');
                         ProcessMaker.apiClient
-                        .get(
-                            "/adoa/employee-appraisal?initDate=" +
-                            this.initDate +
-                            "&endDate=" +
-                            this.endDate +
-                            "&userId=" +
-                            this.adoaEmployeeSelected +
-                            "&currentUser=" +
-                            this.currentUserId +
-                            "&type=" +
-                            this.documentsSelected.toString()
-                        )
+                        .get(decodeURI(uri))
                         .then(response => {
-                            console.log(response.data);
-                            this.appraisalList = response.data;
+                            this.appraisalList = response.data.data;
                             this.showList = true;
                             $('#appraisalList').DataTable().destroy();
                         })
@@ -414,19 +406,19 @@
                     getAppraisalType(value) {
                         let type = '';
                         switch (value) {
-                            case 1:
+                            case 'MY_COACHING_NOTES':
                                 type = 'My Coaching Note';
                             break;
-                            case 2:
+                            case 'COACHING_NOTES_MANAGER':
                                 type = 'Coaching Note for My Direct Report';
                             break;
-                            case 3:
+                            case 'SELF_APPRAISAL':
                                 type = 'Self-Appraisal';
                             break;
-                            case 4:
+                            case 'INFORMAL_APPRAISAL':
                                 type = 'Informal Appraisal';
                             break;
-                            case 5:
+                            case 'FORMAL_APPRAISAL':
                                 type = 'Formal Employee Appraisal';
                             break;
                             default:
@@ -443,27 +435,27 @@
                         if(contentJson !== null && contentJson.length > 0 && contentJson != '') {
 
                             switch (type) {
-                                case 1:
+                                case 'MY_COACHING_NOTES':
                                     if (content.commitments != null && content.commitments != '') {
                                         appraisalContent = content.commitments;
                                     }
                                 break;
-                                case 2:
+                                case 'COACHING_NOTES_MANAGER':
                                     if (content.commitments != null && content.commitments != '') {
                                         appraisalContent = content.commitments;
                                     }
                                 break;
-                                case 3:
+                                case 'SELF_APPRAISAL':
                                     if (content.section5_comments != null && content.section5_comments != '') {
                                         appraisalContent = content.section5_comments;
                                     }
                                 break;
-                                case 4:
+                                case 'INFORMAL_APPRAISAL':
                                     if (content.section5_comments != null && content.section5_comments != '') {
                                         appraisalContent = content.section5_comments;
                                     }
                                 break;
-                                case 5:
+                                case 'FORMAL_APPRAISAL':
                                     if (content.section5_comments != null && content.section5_comments != '') {
                                         appraisalContent = content.section5_comments;
                                     }
@@ -476,7 +468,12 @@
                         return appraisalContent;
                     },
                     exportPdf() {
-                        window.location = "{{ URL::asset('adoa/employee-appraisal/print') }}" + "?initDate=" +
+                        window.location = "{{ URL::asset('adoa/employee-appraisal/print') }}" +
+                        "?employeeName=" +
+                        this.adoaEmployeeName +
+                        "&employeeId=" +
+                        this.adoaEmployeeSelected +
+                        "&initDate=" +
                         this.initDate +
                         "&endDate=" +
                         this.endDate +
@@ -498,36 +495,59 @@
                             this.dataTable = $('#appraisalList').DataTable({
                                 "responsive": true,
                                 "processing": true,
-                                "order": [[ 1, "asc" ]],
+                                "order": [[ 0, "desc" ]],
                                 "data" : app.appraisalList,
                                 "columns": [
-                                    { "title": "Id", "data": "id","visible": false, "defaultContent": ""},
-                                    { "title": "Request No.",  "data": "request_id", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "From", "data": "evaluator_fullname", "defaultContent": ""},
-                                    { "title": "To", "data": "fullname", "defaultContent": ""},
-                                    { "title": "EIN", "data": "user_ein", "defaultContent": "", "sortable": false},
+                                    { "title": "Request No.",  "data": "data.REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
+                                    { "title": "From", "data": "data.EVALUATOR_FIRSTNAME", "defaultContent": "",
+                                        "render" : function (data,type, row) {
+                                            if(typeof(row.data.EVALUATOR_LAST_NAME) === 'undefined' ||  row.data.EVALUATOR_LAST_NAME == null
+                                            || typeof(row.data.EVALUATOR_FIRST_NAME) === 'undefined' || row.data.EVALUATOR_FIRST_NAME == null) {
+                                                return 'No registered';
+                                            }
+                                            return row.data.EVALUATOR_LAST_NAME + " " +  row.data.EVALUATOR_FIRST_NAME;
+                                        }
+                                    },
+                                    { "title": "To", "data": "fullname", "defaultContent": "",
+                                        "render": function (data, type, row) {
+                                            if(typeof(row.data.EMPLOYEE_LAST_NAME) === 'undefined' || row.data.EMPLOYEE_LAST_NAME == null
+                                            || typeof(row.data.EMPLOYEE_FIRST_NAME) === 'undefined' || row.data.EMPLOYEE_FIRST_NAME == null) {
+                                                return 'No registered';
+                                            }
+                                            return row.data.EMPLOYEE_LAST_NAME + " " +  row.data.EMPLOYEE_FIRST_NAME
+                                        }
+                                    },
+                                    { "title": "EIN", "data": "DATA.EMPLOYEE_EIN", "defaultContent": "", "sortable": false},
                                     { "title": "Type", "data": "type", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            return app.getAppraisalType(row.type);
+                                            return app.getAppraisalType(row.data.AZP_PROCESS);
                                         }
                                     },
                                     { "title": "Comments", "data": "content", "defaultContent": "",
                                         "render": function (data, type, row, meta) {
-                                            return app.getAppraisalContent(row.type, row.content)
+                                            return app.getAppraisalContent(row.data.AZP_PROCESS, row.data.CONTENT)
                                         }
                                     },
                                     { "title": "Date", "data": "date", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            return (row.date).substring(0, 10);
+                                            let dateFormat = new Date(row.data.DATE);
+
+                                            var dd   = String(dateFormat.getDate()).padStart(2, '0');
+                                            var mm   = String(dateFormat.getMonth() + 1).padStart(2, '0');
+                                            var yyyy = dateFormat.getFullYear();
+
+                                            let date = mm + '-' + dd + '-' + yyyy;
+                                            return date;
+
                                         }
                                     },
                                     {
                                         "title": "Actions", "data" : "", "sortable": false, "defaultContent": "",
                                         "render": function (data, type,row) {
                                             let html = '';
-                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.request_id + ', ' + row.file_id + ');"></i></a>&nbsp;';
-                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.request_id + ', ' + row.file_id + ');"></i></a>&nbsp;';
-                                            html += '<a href="/request/' + row.request_id + '/files/' + row.file_id + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="/request/' + row.data.REQUEST_ID + '/files/' + row.data.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
 
                                             return html;
                                         }
