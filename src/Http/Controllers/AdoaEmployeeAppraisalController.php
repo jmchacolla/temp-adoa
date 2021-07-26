@@ -6,14 +6,20 @@ use ProcessMaker\Http\Resources\ApiCollection;
 use ProcessMaker\Package\Adoa\Models\AdoaUsers;
 use ProcessMaker\Package\Adoa\Models\AdoaProcessRequest;
 use ProcessMaker\Package\Adoa\Models\AdoaEmployeeAppraisal;
+use ProcessMaker\Models\EnvironmentVariable;
+use Illuminate\Http\Request;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
 use RBAC;
-use Illuminate\Http\Request;
 use URL;
 use DateTime;
 use DB;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Psr7\Request as RequestGuzzle;
+use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\Exception\RequestException;
 
 
 class AdoaEmployeeAppraisalController extends Controller
@@ -25,82 +31,18 @@ class AdoaEmployeeAppraisalController extends Controller
         ->where('id', auth()->user()->id)->get()->toArray();
         $manager   = new AdoaUsers();
         $isManager = $manager->isAdoaManager(auth()->user()->id);
+        $collectionId  = EnvironmentVariable::whereName('azp_lookup_collection_id')->first()->value;
 
         return view('adoa::adoaEmployeeAppraisal', [
             'adoaUser' => empty($adoaUser[0]) ? [] : $adoaUser[0],
+            'collectionId' => $collectionId,
             'isManager' => $isManager,
             'isSysAdmin' => $userLogged->is_administrator
         ]);
     }
 
-    public function store(Request $request){
-
-        $oldCase = AdoaEmployeeAppraisal::where('id', $request->get('request_id'))
-            ->where('type', $request->get('type'))->get()->toArray();
-
-        $user       = AdoaUsers::select('id', 'users.*')->where('username', $request->get('user_ein'))->first()->toArray();
-        $supervisor = AdoaUsers::where('username', $request->get('supervisor_ein'))->first()->toArray();
-        $userData   = array_merge($request->all(), ['user_id' => $user['id'], 'supervisor_id' => $supervisor['id']]);
-
-        if(empty($oldCase)) {
-            $appraisal  = new AdoaEmployeeAppraisal();
-            $appraisal->fill($userData);
-            $appraisal->saveOrFail();
-
-            return $appraisal;
-        } else {
-            $oldCase->update($userData);
-
-            return $oldCase;
-        }
-    }
-
     public function show(String $id){
         return AdoaEmployeeAppraisal::findOrFail($id);
-    }
-
-    public function getEmployeeAppraisalByUserId(Request $request)
-    {
-        try {
-            $today      = date('Y-m-d 00:00:00');
-            $finalToday = date('Y-m-d 23:59:59');
-
-            $initDate  = !empty($request->get('initDate')) ? date('Y-m-d 00:00:00', strtotime($request->get('initDate'))) : $today;
-            $finalDate = !empty($request->get('endDate')) ? date('Y-m-d 23:59:59', strtotime($request->get('endDate'))) : $finalToday;
-            $userId    = !empty($request->get('userId')) ? $request->get('userId') :  '';
-            $type      = $request->has('type') ? explode(',', $request->get('type')) : [];
-
-            $query = AdoaEmployeeAppraisal::select(
-                DB::raw("CONCAT(users.firstname,' ',users.lastname) AS fullname, CONCAT(evaluator.firstname,' ',evaluator.lastname) AS evaluator_fullname"),
-                'adoa_employee_appraisal.*',
-                'media.id as file_id'
-                )
-                ->where('adoa_employee_appraisal.date', '>=', $initDate)
-                ->where('adoa_employee_appraisal.date', '<=', $finalDate)
-                ->when($userId != '', function ($query) use ($userId) {
-                    $query->where('adoa_employee_appraisal.user_id', '=', $userId);
-                    return $query;
-                })
-                ->when(!empty($type), function ($query) use ($type) {
-                    $query->whereIn('adoa_employee_appraisal.type', $type);
-                    return $query;
-                })
-
-                ->join('users', 'adoa_employee_appraisal.user_id', '=', 'users.id')
-                ->join('users as evaluator', 'adoa_employee_appraisal.evaluator_id', '=', 'evaluator.id')
-                ->join('media', 'adoa_employee_appraisal.request_id', '=', 'media.model_id')
-                ->join('process_requests', 'adoa_employee_appraisal.request_id', '=', 'process_requests.id')
-                ->whereRaw('media.id = json_extract(process_requests.data, "$.pdf")')
-                ->where('process_requests.status', 'COMPLETED')
-                ->orderBy('date', 'DESC')
-                ->distinct('adoa_employee_appraisal.request_id')
-                ->get()
-                ->toArray();
-            return $query;
-        } catch (Exception $exception) {
-            return [$exception->getMessage()];
-            throw new Exception('Error function getEmployeeAppraisalByUserId: ' . $exception->getMessage());
-        }
     }
 
     public function getEmployeeAppraisalByUser(Array $data)
@@ -120,7 +62,7 @@ class AdoaEmployeeAppraisalController extends Controller
                 ->where('adoa_employee_appraisal.date', '>=', $initDate)
                 ->where('adoa_employee_appraisal.date', '<=', $finalDate)
                 ->whereIn('adoa_employee_appraisal.type', $type)
-                ->where('adoa_employee_appraisal.user_id', '=', $userId)
+                ->where('adoa_employee_appraisal.user_id', '=', Id)
                 ->join('users as evaluator', 'adoa_employee_appraisal.evaluator_id', '=', 'evaluator.id')
                 ->join('media', 'adoa_employee_appraisal.request_id', '=', 'media.model_id')
                 ->join('process_requests', 'adoa_employee_appraisal.request_id', '=', 'process_requests.id')
@@ -156,49 +98,69 @@ class AdoaEmployeeAppraisalController extends Controller
         }
     }
 
+    /**
+     * Get Appraisal by employee
+     * call to Data connector to get appraisal list
+     * call the templates according to the list obtained
+     * merge all html text and print a PDF file.
+     * @param Request $request
+     *
+     * @return Response
+     */
     public function generateReportPdf(Request $request)
     {
         try {
-            $type        = !empty($request->get('type'))  ? explode(',', $request->get('type')) : [];
-            $userId      = !empty($request->get('userId')) ? $request->get('userId') : '1';
-            $currentUser = auth()->user()->toArray();
-            $currentDate = date('Y-m-d H:i:s');
-            $today       = date('Y-m-d 00:00:00');
-            $finalToday  = date('Y-m-d 23:59:59');
-            $initDate    = !empty($request->get('initDate')) ? $request->get('initDate') : $today;
-            $endDate     = !empty($request->get('endDate')) ? $request->get('endDate') : $finalToday;
 
-            $user = AdoaUsers::find($userId)->toArray();
+            $collectionId  = EnvironmentVariable::whereName('azp_lookup_collection_id')->first()->value;
+            $apiToken      = EnvironmentVariable::whereName('api_token')->first()->value;
+            $pmql = '';
+            $pmql .= '(data.EMPLOYEE_ID = "' . $request->all()['employeeId'] . '") AND(data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' . $request->all()['userId'] . '") ';
+            $pmql .= 'AND (data.DATE>"' . $request->all()['initDate'] . ' 00:00:00")';
+            $pmql .= 'AND (data.DATE<"' . $request->all()['endDate'] . ' 23:59:59")';
 
-            $dataReport = array(
-                'currentUser' => $currentUser,
-                'currentDate' => $currentDate,
-                'userId'      => $userId,
-                'initDate'    => $initDate,
-                'endDate'     => $endDate,
-                'type'        => $type
-            );
+            $appraisalSelected = '';
+            $type = $request->all()['type'];
+            $arrayType = explode(',', $type);
 
-            $appraisalList = $this->getEmployeeAppraisalByUser($dataReport);
+            foreach( $arrayType as $appraisalType){
+                $appraisalSelected .= 'data.AZP_PROCESS like "' . $appraisalType . '" or ';
+            }
+
+            $lastIndex = strrpos($appraisalSelected, "or ");
+            $appraisalSelected = substr($appraisalSelected,0, $lastIndex);
+
+            $uri = '/api/1.0/collections/' . $collectionId . '/records?pmql=(' . $pmql . ' AND (' . $appraisalSelected . '))';
+
+            $headers = [
+                'Authorization' => 'Bearer ' . $apiToken,
+                'Content-Type'  => 'application/x-www-form-urlencoded'
+            ];
+
+            $client = new Client();
+
+            $response = $client->get(url($uri), [
+                'headers'     => $headers
+            ]);
+            $dataResponse = json_decode($response->getBody()->getContents(), true);
+
             $html = '';
 
-            foreach ($appraisalList as $appraisal) {
-
-                switch ($appraisal['type']) {
-                    case '1' :
-                        $html .= $this->getContentEmployeeCoachingNotes($appraisal, $user, $currentUser);
+            foreach ($dataResponse['data'] as $appraisal) {
+                switch ($appraisal['data']['AZP_PROCESS']) {
+                    case 'MY_COACHING_NOTES' :
+                        $html .= $this->getContentMyCoachingNotes($appraisal['data']);
                         break;
-                    case '2' :
-                        $html .= $this->getContentManagementCoachingNotes($appraisal, $user, $currentUser);
+                    case 'COACHING_NOTES_MANAGER' :
+                        $html .= $this->getContentManagementCoachingNotes($appraisal['data']);
                         break;
-                    case '3' :
-                        $html .= $this->getContentEmployeeSelfAppraisal($appraisal, $user, $currentUser);
+                    case 'SELF_APPRAISAL' :
+                        $html .= $this->getContentSelfAppraisal($appraisal['data']);
                         break;
-                    case '4' :
-                        $html .= $this->getContentInformalAppraisal($appraisal, $user, $currentUser);
+                    case 'INFORMAL_APPRAISAL' :
+                        $html .= $this->getContentInformalAppraisal($appraisal['data']);
                         break;
-                    case '5' :
-                        $html .= $this->getContentFormalAppraisal($appraisal, $user, $currentUser);
+                    case 'FORMAL_APPRAISAL' :
+                        $html .= $this->getContentFormalAppraisal($appraisal['data']);
                         break;
                     default:
                         break;
@@ -208,9 +170,9 @@ class AdoaEmployeeAppraisalController extends Controller
                 throw new Exception('No Data to export to PDF.');
             }
 
-            $fileName    = $user['firstname']. ' ' . $user['lastname'] . ' '. date('m-d-Y his') . '.pdf';
-
-            $dompdf = new Dompdf();
+            $fileName  = empty($request->all()['employeeName']) ? '' : $request->all()['employeeName'];
+            $fileName .= '_Employee_Appraisal.pdf';
+            $dompdf    = new Dompdf();
             $dompdf->set_option('isHtml5ParserEnabled' , true);
             $dompdf->set_option('isRemoteEnabled' , true);
             $dompdf->loadHtml($html);
@@ -220,24 +182,24 @@ class AdoaEmployeeAppraisalController extends Controller
             return $dompdf->stream($fileName);
 
         } catch (\Throwable $exception) {
-            new Exception("Error Processing Request", 1);
-            ($exception->getMessage());
             return redirect()->back()->withInput()->withErrors(['error' => $exception->getMessage()]);
         }
     }
 
-    public function getContentEmployeeCoachingNotes(Array $appraisal, Array $user, Array $currentUser)
+
+    /**
+     * Templete for My Coaching Notes PDF
+     * @param Array $appraisal
+     *
+     * @return String
+     */
+    public function getContentMyCoachingNotes(Array $appraisal)
     {
         try {
-            $supervisor = AdoaUsers::find($appraisal['supervisor_id'])->toArray();
-            $content    = !empty($appraisal['content']) ? json_decode($appraisal['content'], true) : [];
 
-            $adoaProcessRequest = new AdoaProcessRequest();
-            $requestData = $adoaProcessRequest->getDataByRequest($appraisal['request_id']);
-            $requestData = $requestData[0]['data'];
-            $requestData = json_decode($requestData);
-            $backgroundColor = $requestData->CON_COACHING_COLOR;
-            $coachingRole = $requestData->CON_COACHING_ROLE;
+            $content = !empty($appraisal['CONTENT']) ? json_decode($appraisal['CONTENT'], true) : [];
+            $backgroundColor = empty($content['con_coaching_color']) ? '#788793' : $content['con_coaching_color'];
+            $coachingRole    = empty($content['con_coaching_role']) ? 'No registred' : $content['con_coaching_role'];
 
             $whiteSpace  = '';
             $whiteNumber = '0.00' ;
@@ -269,19 +231,19 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tr>';
             $html .= '<td width="40%">';
             $html .= '<span><span style="font-weight: bold;">Employee Name: </span>';
-            $html .=  empty($user['firstname']) ? $whiteSpace : $user['firstname'] . ' ';
-            $html .=  empty($user['lastname']) ? $whiteSpace : $user['lastname'];
+            $html .=  empty($appraisal['EMPLOYEE_FIRST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['EMPLOYEE_LAST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_LAST_NAME'];
             $html .= '</span>';
             $html .= '</td>';
             $html .= '<td width="40%">';
             $html .= '<span><span style="font-weight: bold;">Supervisor Name: </span>';
-            $html .=  empty($supervisor['firstname']) ? $whiteSpace : $supervisor['firstname'] . ' ';
-            $html .=  empty($supervisor['lastname']) ? $whiteSpace : $supervisor['lastname'];
+            $html .=  empty($appraisal['SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_LAST_NAME'];
             $html .= '</span>';
             $html .= '</td>';
             $html .= '<td width="20%">';
             $html .= '<span>Date:</span>';
-            $html .=  empty($appraisal['date']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['date']));
+            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['DATE']));
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</table>';
@@ -452,21 +414,22 @@ class AdoaEmployeeAppraisalController extends Controller
 
             return $html;
         } catch (Exception $exception) {
-            throw new Exception($exception);
+            return '';
         }
     }
 
-    public function getContentManagementCoachingNotes(Array $appraisal, Array $user, Array $currentUser)
+    /**
+     * Template for Management Coaching Notes PDF
+     * @param Array $appraisal
+     *
+     * @return String
+     */
+    public function getContentManagementCoachingNotes(Array $appraisal)
     {
         try {
-            $supervisor = AdoaUsers::find($appraisal['supervisor_id'])->toArray();
-            $content    = !empty($appraisal['content']) ? json_decode($appraisal['content'], true) : [];
-            $adoaProcessRequest = new AdoaProcessRequest();
-            $requestData = $adoaProcessRequest->getDataByRequest($appraisal['request_id']);
-            $requestData = $requestData[0]['data'];
-            $requestData = json_decode($requestData);
-            $backgroundColor = $requestData->CON_COACHING_COLOR;
-            $coachingRole = $requestData->CON_COACHING_ROLE;
+            $content         = !empty($appraisal['CONTENT']) ? json_decode($appraisal['CONTENT'], true) : [];
+            $backgroundColor = empty($content['con_coaching_color']) ? '#788793' : $content['con_coaching_color'];
+            $coachingRole    = empty($content['con_coaching_role']) ? 'No registred' : $content['con_coaching_role'];
 
             $whiteSpace  = '';
             $whiteNumber = '0.00' ;
@@ -498,19 +461,19 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tr>';
             $html .= '<td width="40%">';
             $html .= '<span><span style="font-weight: bold;">Employee Name: </span>';
-            $html .=  empty($user['firstname']) ? $whiteSpace : $user['firstname'] . ' ';
-            $html .=  empty($user['lastname']) ? $whiteSpace : $user['lastname'];
+            $html .=  empty($appraisal['EMPLOYEE_FIRST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['EMPLOYEE_LAST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_LAST_NAME'];
             $html .= '</span>';
             $html .= '</td>';
             $html .= '<td width="40%">';
             $html .= '<span><span style="font-weight: bold;">Supervisor Name: </span>';
-            $html .=  empty($supervisor['firstname']) ? $whiteSpace : $supervisor['firstname'] . ' ';
-            $html .=  empty($supervisor['lastname']) ? $whiteSpace : $supervisor['lastname'];
+            $html .=  empty($appraisal['SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_LAST_NAME'];
             $html .= '</span>';
             $html .= '</td>';
             $html .= '<td width="20%">';
             $html .= '<span>Date:</span>';
-            $html .=  empty($appraisal['date']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['date']));
+            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['DATE']));
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</table>';
@@ -681,16 +644,23 @@ class AdoaEmployeeAppraisalController extends Controller
 
             return $html;
         } catch (Exception $exception) {
-            throw new Exception($exception);
+           return '';
         }
     }
 
-    public function getContentEmployeeSelfAppraisal(Array $appraisal, Array $user, Array $currentUser)
+    /**
+     * Templete for Self Appraisal PDF
+     * @param Array $appraisal
+     *
+     * @return String
+     */
+    public function getContentSelfAppraisal(Array $appraisal)
     {
         try {
-            $supervisor      = AdoaUsers::find($appraisal['supervisor_id'])->toArray();
+            $content         = !empty($appraisal['CONTENT']) ? json_decode($appraisal['CONTENT'], true) : [];
+            $backgroundColor = empty($content['con_coaching_color']) ? '#788793' : $content['con_coaching_color'];
+            $coachingRole    = empty($content['con_coaching_role']) ? 'No registred' : $content['con_coaching_role'];
 
-            $content     = !empty($appraisal['content']) ? json_decode($appraisal['content'], true) : [];
             $whiteSpace  = '';
             $whiteNumber = '0.00' ;
 
@@ -714,21 +684,21 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tbody>';
             $html .= '<tr>';
             $html .= '<td>';
-            $html .=  empty($user['firstname']) ? $whiteSpace : $user['firstname'];
+            $html .=  empty($appraisal['EMPLOYEE_FIRST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_FIRST_NAME'] . ' ';
             $html .= '</td>';
             $html .= '<td>';
-            $html .=  empty($user['lastname']) ? $whiteSpace : $user['lastname'];
+            $html .=  empty($appraisal['EMPLOYEE_LAST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_LAST_NAME'];
             $html .= '</td>';
             $html .= '<td colspan="2">';
-            $html .=  empty($user['username']) ? $whiteSpace : $user['username'];
+            $html .=  empty($appraisal['EMPLOYEE_EIN']) ? $whiteSpace : $appraisal['EMPLOYEE_EIN'];
             $html .= '</td>';
             $html .= '<td>From</td>';
             $html .= '<td>';
-            $html .=  empty($content['period_to']) ? $whiteSpace : $content['period_to'];
+            $html .=  empty($content['period_from']) ? $whiteSpace : $content['period_from'];
             $html .= '</td>';
             $html .= '<td>To</td>';
             $html .= '<td>';
-            $html .=  empty($content['period_from']) ? $whiteSpace : $content['period_from'];
+            $html .=  empty($content['period_to']) ? $whiteSpace : $content['period_to'];
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
@@ -748,16 +718,18 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tbody>';
             $html .= '<tr>';
             $html .= '<td>';
-            $html .=  empty($supervisor['firstname']) ? $whiteSpace : $supervisor['firstname'];
+            $html .=  empty($appraisal['SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_FIRST_NAME'] . ' ';
             $html .= '</td>';
             $html .= '<td>';
-            $html .=  empty($supervisor['lastname']) ? $whiteSpace : $supervisor['lastname'];
+            $html .=  empty($appraisal['SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_LAST_NAME'];
             $html .= '</td>';
-            $html .= '<td></td>';
+            $html .= '<td>';
+            $html .=  empty($content['agency_name']) ? $whiteSpace : $content['agency_name'];
+            $html .= '</td>';
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>';
-            $html .=  empty($user['meta']['title']) ? $whiteSpace : $user['meta']['title'];
+            $html .=  empty($content['ema_employee_position_title']) ? $whiteSpace : $content['ema_employee_position_title'];
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
@@ -1059,16 +1031,20 @@ class AdoaEmployeeAppraisalController extends Controller
 
             return $html;
         } catch (Exception $exception) {
-            throw new Exception($exception);
+            return '';
         }
     }
 
-    public function getContentInformalAppraisal(Array $appraisal, Array $user, Array $currentUser)
+    /**
+     * Templete for Informal Appraisal PDF
+     * @param Array $appraisal
+     *
+     * @return String
+     */
+    public function getContentInformalAppraisal(Array $appraisal)
     {
         try {
-            $supervisor      = AdoaUsers::find($appraisal['supervisor_id'])->toArray();
-
-            $content     = !empty($appraisal['content']) ? json_decode($appraisal['content'], true) : [];
+            $content     = !empty($appraisal['CONTENT']) ? json_decode($appraisal['CONTENT'], true) : [];
             $whiteSpace  = '';
             $whiteNumber = '0.00' ;
 
@@ -1092,13 +1068,13 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tbody>';
             $html .= '<tr>';
             $html .= '<td>';
-            $html .=  empty($user['firstname']) ? $whiteSpace : $user['firstname'];
+            $html .=  empty($appraisal['EMPLOYEE_FIRST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_FIRST_NAME'] . ' ';
             $html .= '</td>';
             $html .= '<td>';
-            $html .=  empty($user['lastname']) ? $whiteSpace : $user['lastname'];
+            $html .=  empty($appraisal['EMPLOYEE_LAST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_LAST_NAME'];
             $html .= '</td>';
             $html .= '<td colspan="2">';
-            $html .=  empty($user['username']) ? $whiteSpace : $user['username'];
+            $html .=  empty($appraisal['EMPLOYEE_EIN']) ? $whiteSpace : $appraisal['EMPLOYEE_EIN'];
             $html .= '</td>';
             $html .= '<td>From</td>';
             $html .= '<td>';
@@ -1126,16 +1102,18 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tbody>';
             $html .= '<tr>';
             $html .= '<td>';
-            $html .=  empty($supervisor['firstname']) ? $whiteSpace : $supervisor['firstname'];
+            $html .=  empty($appraisal['SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_FIRST_NAME'] . ' ';
             $html .= '</td>';
             $html .= '<td>';
-            $html .=  empty($supervisor['lastname']) ? $whiteSpace : $supervisor['lastname'];
+            $html .=  empty($appraisal['SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_LAST_NAME'];
             $html .= '</td>';
-            $html .= '<td></td>';
+            $html .= '<td>';
+            $html .=  empty($content['agency_name']) ? $whiteSpace : $content['agency_name'];
+            $html .= '</td>';
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>';
-            $html .=  empty($user['meta']['title']) ? $whiteSpace : $user['meta']['title'];
+            $html .=  empty($content['ema_employee_position_title']) ? $whiteSpace : $content['ema_employee_position_title'];
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
@@ -1436,16 +1414,20 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</table>';
             return $html;
         } catch (Exception $exception) {
-            throw new Exception($exception);
+           return '';
         }
     }
 
-    public function getContentFormalAppraisal(Array $appraisal, Array $user, Array $currentUser)
+    /**
+     * Templete for Formal Appraisal PDF
+     * @param Array $appraisal
+     *
+     * @return String
+     */
+    public function getContentFormalAppraisal(Array $appraisal)
     {
         try {
-            $supervisor      = AdoaUsers::find($appraisal['supervisor_id'])->toArray();
-
-            $content     = !empty($appraisal['content']) ? json_decode($appraisal['content'], true) : [];
+            $content     = !empty($appraisal['CONTENT']) ? json_decode($appraisal['CONTENT'], true) : [];
             $whiteSpace  = '';
             $whiteNumber = '0.00';
 
@@ -1469,13 +1451,13 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tbody>';
             $html .= '<tr>';
             $html .= '<td>';
-            $html .=  empty($user['firstname']) ? $whiteSpace : $user['firstname'];
+            $html .=  empty($appraisal['EMPLOYEE_FIRST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_FIRST_NAME'] . ' ';
             $html .= '</td>';
             $html .= '<td>';
-            $html .=  empty($user['lastname']) ? $whiteSpace : $user['lastname'];
+            $html .=  empty($appraisal['EMPLOYEE_LAST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_LAST_NAME'];
             $html .= '</td>';
             $html .= '<td colspan="2">';
-            $html .=  empty($user['username']) ? $whiteSpace : $user['username'];
+            $html .=  empty($appraisal['EMPLOYEE_EIN']) ? $whiteSpace : $appraisal['EMPLOYEE_EIN'];
             $html .= '</td>';
             $html .= '<td>From</td>';
             $html .= '<td>';
@@ -1503,16 +1485,18 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tbody>';
             $html .= '<tr>';
             $html .= '<td>';
-            $html .=  empty($supervisor['firstname']) ? $whiteSpace : $supervisor['firstname'];
+            $html .=  empty($appraisal['SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_FIRST_NAME'] . ' ';
             $html .= '</td>';
             $html .= '<td>';
-            $html .=  empty($supervisor['lastname']) ? $whiteSpace : $supervisor['lastname'];
+            $html .=  empty($appraisal['SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_LAST_NAME'];
             $html .= '</td>';
-            $html .= '<td></td>';
+            $html .= '<td>';
+            $html .=  empty($content['agency_name']) ? $whiteSpace : $content['agency_name'];
+            $html .= '</td>';
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>&nbsp;</td>';
             $html .= '<td>';
-            $html .=  empty($user['meta']['title']) ? $whiteSpace : $user['meta']['title'];
+            $html .=  empty($content['ema_employee_position_title']) ? $whiteSpace : $content['ema_employee_position_title'];
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
@@ -1848,23 +1832,23 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tr>';
             $html .= '<td style="width: 20%;">Employee Signature:</td>';
             $html .= '<td style="width: 30%;">';
-            $html .=  empty($user['firstname']) ? $whiteSpace : $user['firstname'] . ' ';
-            $html .=  empty($user['lastname']) ? $whiteSpace : $user['lastname'];
+            $html .=  empty($appraisal['EMPLOYEE_FIRST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['EMPLOYEE_LAST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_LAST_NAME'];
             $html .= '</td>';
             $html .= '<td style="width: 20%;">Date:</td>';
             $html .= '<td style="width: 30%;">';
-            $html .=  empty($appraisal['date']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['date']));
+            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['DATE']));
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '<tr>';
             $html .= '<td style="width: 20%;">Supervisor Signature:</td>';
             $html .= '<td style="width: 30%;">';
-            $html .=  empty($supervisor['firstname']) ? $whiteSpace : $supervisor['firstname'] . ' ';
-            $html .=  empty($supervisor['lastname']) ? $whiteSpace : $supervisor['lastname'];
+            $html .=  empty($appraisal['SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_LAST_NAME'];
             $html .= '</td>';
             $html .= '<td style="width: 20%;">Date:</td>';
             $html .= '<td style="width: 30%;">';
-            $html .=  empty($appraisal['date']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['date']));
+            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['DATE']));
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
@@ -1872,7 +1856,7 @@ class AdoaEmployeeAppraisalController extends Controller
 
             return $html;
         } catch (Exception $exception) {
-            throw new Exception($exception);
+            return '';
         }
     }
 }

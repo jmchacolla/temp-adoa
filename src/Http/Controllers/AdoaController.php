@@ -123,8 +123,11 @@ class AdoaController extends Controller
     public function getListRequestsAgency($groupId) {
         $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
         if (count($member) > 0 && $groupId == config('adoa.agency_admin_group_id')) {
+
+            //Getting Agency Information from meta data
             $agencies = explode(',', Auth::user()->meta->agency);
             $agenciesArray = array();
+
             if (count($agencies) == 1 && $agencies[0] == 'ALL') {
                 $flagAgency = 0;
             } else {
@@ -133,44 +136,52 @@ class AdoaController extends Controller
                 }
                 $flagAgency = 1;
             }
-            if ($flagAgency == 1) {
-                $adoaListRequestsAgency = DB::table('process_requests')
-                    ->leftJoin('media', 'process_requests.id', '=', 'media.model_id')
-                    ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
-                    ->select('process_requests.id as request_id',
-                        'process_requests.name',
-                        'process_requests.status as request_status',
-                        'process_requests.data',
-                        'process_requests.created_at',
-                        'process_requests.completed_at',
-                        'media.id AS file_id',
-                        'media.custom_properties',
-                        'users.firstname',
-                        'users.lastname')
-                    ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
-                    ->whereIn('users.meta->agency', $agenciesArray)
-                    ->where('process_requests.callable_id', 'ProcessId')
-                    ->orderBy('process_requests.id', 'desc')
-                    ->get();
+
+            //Getting Agency Information from meta data
+            $processes = explode(',', Auth::user()->meta->pm_process_id);
+            $processesArray = array();
+
+            if (count($processes) == 1 && $processes[0] == 'ALL') {
+                $flagProcess = 0;
             } else {
-                $adoaListRequestsAgency = DB::table('process_requests')
-                    ->leftJoin('media', 'process_requests.id', '=', 'media.model_id')
-                    ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
-                    ->select('process_requests.id as request_id',
-                        'process_requests.name',
-                        'process_requests.status as request_status',
-                        'process_requests.data',
-                        'process_requests.created_at',
-                        'process_requests.completed_at',
-                        'media.id AS file_id',
-                        'media.custom_properties',
-                        'users.firstname',
-                        'users.lastname')
-                    ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
-                    ->where('process_requests.callable_id', 'ProcessId')
-                    ->orderBy('process_requests.id', 'desc')
-                    ->get();
+                foreach($processes as $process) {
+                    $processesArray[] = $process;
+                }
+                $flagProcess = 1;
             }
+
+            //Query to get requests for agency admin
+            $adoaListRequestsAgency = DB::table('process_requests')
+                ->leftJoin('media', 'process_requests.id', '=', 'media.model_id')
+                ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
+                ->select('process_requests.id as request_id',
+                    'process_requests.name',
+                    'process_requests.status as request_status',
+                    'process_requests.data',
+                    'process_requests.created_at',
+                    'process_requests.completed_at',
+                    'media.id AS file_id',
+                    'media.custom_properties',
+                    'users.firstname',
+                    'users.lastname')
+                ->where('process_requests.callable_id', 'ProcessId')
+                ->whereNull('process_requests.data->in_progress_request')
+                ->WhereNull('process_requests.data->agreement_in_progress')
+                ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED']);
+
+            if ($flagAgency == 1) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->whereIn('users.meta->agency', $agenciesArray);
+            }
+
+            if ($flagProcess == 1) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->whereIn('process_requests.process_id', $processesArray);
+            }
+
+            $adoaListRequestsAgency = $adoaListRequestsAgency
+                ->orderBy('process_requests.id', 'desc')
+                ->get();
 
             return view('adoa::adoaAdminAgency', ['adoaListRequestsAgency' => $adoaListRequestsAgency, 'agencyName' => Auth::user()->meta->agency]);
         } else {
@@ -210,13 +221,13 @@ class AdoaController extends Controller
         return response()->file($media->getPath());
     }
 
-	/*public function getRequestByProcessAndUser($process_id, $user_id) {
+	public function getRequestByProcessAndUser($process_id, $user_id) {
         return DB::table('process_requests')
             ->where('process_id', $process_id)
             ->where('user_id', $user_id)
 			->where('status', 'COMPLETED')
 			->get();
-    }*/
+    }
 
     public function getEnvs() {
         return [
