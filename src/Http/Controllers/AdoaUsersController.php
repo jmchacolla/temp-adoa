@@ -1,21 +1,19 @@
 <?php
 namespace ProcessMaker\Package\Adoa\Http\Controllers;
 
+use Illuminate\Http\Request;
 use ProcessMaker\Http\Controllers\Controller;
-use ProcessMaker\Http\Resources\ApiCollection;
-use ProcessMaker\Package\Adoa\Models\AdoaUsers;
 // use ProcessMaker\Package\Adoa\Models\AdoaUserInformation;
 
-use RBAC;
-use \Exception;
-use Illuminate\Http\Request;
-use URL;
-use \DateTime;
-use \DB;
+use ProcessMaker\Package\Adoa\Models\AdoaUsers;
 use \Auth;
+use \DB;
+use \Exception;
 
 class AdoaUsersController extends Controller
 {
+    public $employeesList = array();
+
     public function index()
     {
         // return view('adoa::index');
@@ -24,19 +22,19 @@ class AdoaUsersController extends Controller
     public function getUsersIdFullname(Request $request, int $id)
     {
         try {
-            $searchTerm  = request('searchTerm');
-            $userLogged  = auth()->user();
+            $searchTerm = request('searchTerm');
+            $userLogged = auth()->user();
             $userCurrent = array(
                 'text' => strtoupper($userLogged['firstname'] . ' ' . $userLogged['lastname']),
-                'id'   => $userLogged['id']
+                'id' => $userLogged['id'],
             );
 
             $adoaUser = new AdoaUsers();
 
             $employeeList = array();
 
-            if($userLogged->is_administrator){
-                $query  = AdoaUsers::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id')
+            if ($userLogged->is_administrator) {
+                $query = AdoaUsers::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id')
                     ->where('status', 'ACTIVE')
                     ->when($searchTerm, function ($query, $searchTerm) {
                         return $query->where(DB::raw('CONCAT_WS(" ", firstname, lastname)'), 'like', '%' . $searchTerm . '%');
@@ -51,27 +49,26 @@ class AdoaUsersController extends Controller
 
                 return $employeeList;
 
-            } else if ($adoaUser->isAdoaManager($id)){
+            } else if ($adoaUser->isAdoaManager($id)) {
 
-                $employees = $this->getEmployesByManagerId($id);
+                $employees = $this->getEmployeesByManagerId($id);
                 $employeeList = empty($employees) ? [] : $employees;
 
-                $manager   = AdoaUsers::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id', 'users.*')
-                ->where('id', $id)
-                ->where('status', 'ACTIVE')
-                ->first()
-                ->toArray();
+                $manager = AdoaUsers::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id', 'users.*')
+                    ->where('id', $id)
+                    ->where('status', 'ACTIVE')
+                    ->first()
+                    ->toArray();
 
                 array_unshift($employeeList, $manager);
-
                 return $employeeList;
 
             } else {
                 $query = AdoaUsers::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id')
-                ->where('status', 'ACTIVE')
-                ->where('id', $id)
-                ->get()
-                ->toArray();
+                    ->where('status', 'ACTIVE')
+                    ->where('id', $id)
+                    ->get()
+                    ->toArray();
 
                 return $query;
             }
@@ -82,7 +79,7 @@ class AdoaUsersController extends Controller
 
     public function getUser(Int $id)
     {
-        $query = AdoaUsers::select('id',  'title', 'firstname', 'lastname', 'email', 'username', 'status', 'meta')
+        $query = AdoaUsers::select('id', 'title', 'firstname', 'lastname', 'email', 'username', 'status', 'meta')
             ->findOrfail($id);
         return $query;
     }
@@ -94,55 +91,32 @@ class AdoaUsersController extends Controller
         return $query;
     }
 
-    public function getEmployesByManagerId(int $managerId, Array $response = [])
+    public function getEmployeesByManagerId(int $managerId, $position = '', $agency = '')
     {
         try {
-
-            $manager = AdoaUsers::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id', 'users.meta', 'status')
-            ->where('users.id', $managerId)
-            ->first()
-            ->toArray();
-
-            $userList = AdoaUsers::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id', 'users.meta', 'status')
-            ->whereJsonContains('meta->super_position', $manager['meta']['position'])
-            ->whereJsonContains('meta->agency', $manager['meta']['agency'])
-            ->get()
-            ->toArray();
-
-            $amountManagers = 0;
-            foreach ($userList as $userEmployee) {
-                if($userEmployee['meta']['manager'] == 'Y') {
-                    $amountManagers++;
-                }
+            $adoaUsers = new AdoaUsers();
+            if (empty($position) && empty($agency)) {
+                ////---- Get Manager data
+                $manager = $adoaUsers->getManagerById($managerId);
+                $position = $manager['meta']['position'];
+                $agency = $manager['meta']['agency'];
             }
-
-            $employee = array();
-
-            foreach ($userList as $value) {
+            ////---- Get all employees of Manager
+            $employees = $adoaUsers->getAllEmployeesBySuperPositionAndAgency($position, $agency);
+            foreach ($employees as $value) {
+                if (!empty($this->employeesList[$value['id']])) {
+                    continue;
+                }
                 if ($value['status'] == 'ACTIVE') {
-                    array_push($response, $value);
+                    $this->employeesList[$value['id']] = $value;
                 }
-                if ($amountManagers > 0) {
-                    if ($value['meta']['manager'] == 'Y') {
-                        $employees = $this->getEmployesByManagerId($value['id'], $response);
-
-                        foreach ($employees as $employee) {
-                            if ($employee['status'] == 'ACTIVE') {
-                                array_push($response, $employee);
-                            }
-                        }
-                    }
+                if ($value['meta']['manager'] == 'Y') {
+                    $this->getEmployeesByManagerId($value['id'], $value['meta']['position'], $value['meta']['agency']);
                 }
             }
-
-            $unique   = array_unique(array_column($response, 'id'));
-            $response = array_intersect_key($response, $unique);
-
-            return $response;
-
+            return $this->employeesList;
         } catch (Exception $exception) {
-            throw new Exception('Error function getEmployesByManagerId: ' . $exception->getMessage());
+            throw new Exception('Error function getEmployeesByManagerId: ' . $exception->getMessage());
         }
     }
 }
-

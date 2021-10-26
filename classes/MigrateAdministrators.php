@@ -5,6 +5,7 @@ namespace ProcessMaker\Adoa\classes;
 use ProcessMaker\Package\Adoa\Models\AdoaUsers;
 use Illuminate\Support\Facades\Hash;
 use GuzzleHttp\Client;
+use ProcessMaker\Models\EnvironmentVariable;
 use Exception;
 use DB;
 
@@ -27,34 +28,33 @@ class MigrateAdministrators
 
             if (!empty($adoaAdministrators->rows)) {
                 foreach ($adoaAdministrators->rows as $administrator) {
+                    if (!empty($localUsersList[$administrator[0]])) {
 
-                    if (!empty($localUsersList[$administrator[1]])) {
-
-                        $UserEmail = $administrator[1] . '@hris.az.gov';
+                        $UserEmail = $administrator[0] . '@hris.az.gov';
 
                         $metaEmail = '';
-                        if (!empty($administrator[9])) {
-                            $metaEmail = trim($administrator[9]);
+                        if (!empty($administrator[8])) {
+                            $metaEmail = trim($administrator[8]);
                         }
 
                         $metaUpdateInformationData = array(
-                            'ein' => $administrator[6],
+                            'ein' => $administrator[5],
                             'email' => $metaEmail,
-                            'agency' => $administrator[2],
-                            'employee_process_level' => $administrator[3],
-                            'pm_process_id' => $administrator[4],
-                            'update_date' => $administrator[5],
+                            'agency' => $administrator[1],
+                            'employee_process_level' => $administrator[2],
+                            'pm_process_id' => $administrator[3],
+                            'update_date' => $administrator[4],
                         );
 
                         $metaUpdateInformationData = json_encode($metaUpdateInformationData);
 
 
                         $updateUserData = array (
-                            'id' => $localUsersList[$administrator[1]],
+                            'id' => $localUsersList[$administrator[0]],
                             'email' => $UserEmail,
-                            'firstname'=> $administrator[7],
-                            'lastname'=> $administrator[8],
-                            'is_administrator'=> false,
+                            'firstname'=> $administrator[6],
+                            'lastname'=> $administrator[7],
+                            'is_administrator'=> true,
                             'status'=> 'ACTIVE',
                             'meta' => $metaUpdateInformationData,
                             'updated_at'=> date('Y-m-d H:i:s'),
@@ -71,33 +71,33 @@ class MigrateAdministrators
 
                             $updatedUsers = $updatedUsers + 1;
                         }
-                    } elseif (empty($localUsersList[$administrator[1]])) {
+                    } elseif (empty($localUsersList[$administrator[0]])) {
 
-                        $UserEmail = $administrator[1] . '@hris.az.gov';
+                        $UserEmail = $administrator[0] . '@hris.az.gov';
 
                         $metaEmail = '';
-                        if (!empty($administrator[9])) {
-                            $metaEmail = trim($administrator[9]);
+                        if (!empty($administrator[8])) {
+                            $metaEmail = trim($administrator[8]);
                         }
 
                         $metaInformationData = array(
-                            'ein' => $administrator[6],
+                            'ein' => $administrator[5],
                             'email' => $metaEmail,
-                            'agency' => $administrator[2],
-                            'employee_process_level' => $administrator[3],
-                            'pm_process_id' => $administrator[4],
-                            'update_date' => $administrator[5],
+                            'agency' => $administrator[1],
+                            'employee_process_level' => $administrator[2],
+                            'pm_process_id' => $administrator[3],
+                            'update_date' => $administrator[4],
                         );
                         $metaInformationData = json_encode($metaInformationData);
 
                         $password = Hash::make('p^@)YUvVB"j4.J*F');
                         $newUserData = array(
                             'email' => $UserEmail,
-                            'firstname'=> $administrator[7],
-                            'lastname'=> $administrator[8],
-                            'username'=> $administrator[1],
+                            'firstname'=> $administrator[6],
+                            'lastname'=> $administrator[7],
+                            'username'=> $administrator[0],
                             'password'=> $password,
-                            'is_administrator'=> false,
+                            'is_administrator'=> true,
                             'status'=> 'ACTIVE',
                             'meta' => $metaInformationData,
                             'created_at'=> date('Y-m-d H:i:s'),
@@ -138,7 +138,7 @@ class MigrateAdministrators
                 "Accept: application/json",
                 "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
             );
-            $url = 'https://hrsieapi.azdoa.gov/api/hrorg/PMAgencyAdmins.json';
+            $url = EnvironmentVariable::whereName('base_url_api_adoa')->first()->value . 'PMAgencyAdmins.json';
 
             $curl = curl_init($url);
             curl_setopt($curl, CURLOPT_URL, $url);

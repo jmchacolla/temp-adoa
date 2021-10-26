@@ -87,6 +87,12 @@
 </script>
 <script type="text/javascript">
     $(document).ready( function () {
+        $('th').on("click", function (event) {
+            if($(event.target).is("input")){
+                event.stopImmediatePropagation();
+            }
+        });
+        
         var table = $('#listRequests').DataTable({
             "initComplete": function () {
                 count = 0;
