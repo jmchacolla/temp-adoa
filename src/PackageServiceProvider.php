@@ -39,7 +39,7 @@ class PackageServiceProvider extends ServiceProvider
     public function boot()
     {
         GlobalScripts::addScript('/vendor/processmaker/packages/adoa/js/checkRequestsCoachingNotes.js');
-        
+
         $this->setGroupIds();
 
         if ($this->app->runningInConsole()) {
@@ -60,17 +60,17 @@ class PackageServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->prefix('api/1.0')
                 ->group(__DIR__ . '/../routes/api.php');
-            
+
             if (class_exists(SavedSearchAddToMenus::class)) {
                 Route::pushMiddlewareToGroup('web', SavedSearchAddToMenus::class);
             }
-            
+
             if (class_exists(CommentsAddToMenus::class)) {
                 Route::pushMiddlewareToGroup('web', CommentsAddToMenus::class);
             }
 
             Route::pushMiddlewareToGroup('web', AddToMenus::class);
-                
+
             Route::pushMiddlewareToGroup('web', Redirect::class);
         }
 
@@ -91,31 +91,31 @@ class PackageServiceProvider extends ServiceProvider
             \ProcessMaker\Package\Adoa\Http\Controllers\Api\ProcessController::class
         );
     }
-    
+
     private function setGroupIds()
     {
         if (! $id = Cache::get('adoa.admin_group_id')) {
-            $id = optional(Group::where('name', 'LIKE', '%Administrators%')->first())->id;         
+            $id = optional(Group::where('name', 'LIKE', '%Administrators%')->first())->id;
             Cache::put('adoa.admin_group_id', $id);
-        }        
+        }
         config(['adoa.admin_group_id' => $id]);
-        
+
         if (! $id = Cache::get('adoa.employee_group_id')) {
-            $id = optional(Group::where('name', 'LIKE', '%Employees%')->first())->id;         
+            $id = optional(Group::where('name', 'LIKE', '%Employees%')->first())->id;
             Cache::put('adoa.employee_group_id', $id);
-        }        
+        }
         config(['adoa.employee_group_id' => $id]);
-        
+
         if (! $id = Cache::get('adoa.manager_group_id')) {
-            $id = optional(Group::where('name', 'LIKE', '%Managers%')->first())->id;         
+            $id = optional(Group::where('name', 'LIKE', '%Managers%')->first())->id;
             Cache::put('adoa.manager_group_id', $id);
-        }        
+        }
         config(['adoa.manager_group_id' => $id]);
 
         if (! $id = Cache::get('adoa.agency_admin_group_id')) {
-            $id = optional(Group::where('name', 'LIKE', '%Agency Admin%')->first())->id;         
+            $id = optional(Group::where('name', 'LIKE', '%Agency Admin%')->first())->id;
             Cache::put('adoa.agency_admin_group_id', $id);
-        }        
+        }
         config(['adoa.agency_admin_group_id' => $id]);
     }
 }

@@ -4,6 +4,7 @@ namespace ProcessMaker\Package\Adoa\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Exception;
+use \DB;
 
 class AdoaUsers extends Model
 {
@@ -177,6 +178,31 @@ class AdoaUsers extends Model
                 ->update(array('status' => 'INACTIVE'));
         } catch (Exception $exception) {
             return $response['error'] = 'There are errors in the Function: inactiveAllUsers ' . $exception->getMessage();
+        }
+    }
+
+    public function getManagerById($id)
+    {
+        try {
+            return static::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id', 'users.meta', 'status')
+                ->where('id', $id)
+                ->where('meta->manager', 'Y')->first()
+                ->toArray();
+        } catch (Exception $exception) {
+            return $response['error'] = 'There are errors in the Function: getManagerById ' . $exception->getMessage();
+        }
+    }
+
+    public function getAllEmployeesBySuperPositionAndAgency($superPosition, $agency)
+    {
+        try {
+            return static::select(DB::raw("CONCAT(firstname,' ',lastname) AS text"), 'id', 'users.meta', 'status')
+                ->where('meta->agency', $agency)
+                ->where('meta->super_position', $superPosition)
+                ->get()
+                ->toArray();
+        } catch (Exception $exception) {
+            return $response['error'] = 'There are errors in the Function: getAllEmployeesBySuperPositionAndAgengy ' . $exception->getMessage();
         }
     }
 }

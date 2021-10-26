@@ -58,9 +58,9 @@
                                 @if (is_null($newCustomProperties->createdBy))
                                     <tr>
                                         <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                        <td class="text-left">{{ $request->name }}</td>
+                                        <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
                                         <td class="text-left">
-                                            @if ($request->name == 'Remote Work - Terminate Agreement')
+                                            @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
                                                 @php
                                                     $dataName = $newCustomProperties->data_name;
                                                     $nameFile = explode('_', $dataName);
@@ -77,7 +77,7 @@
                                             @endif
                                         </td>
                                         <td class="text-left">
-                                            @if ($request->name == 'Remote Work - Terminate Agreement')
+                                            @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
                                                 @if (array_key_exists(5, $nameFile))
                                                     {{ $nameFile[5] }}
                                                 @endif
@@ -100,34 +100,40 @@
                                     </tr>
                                 @endif
                             @else
-                                <tr>
-                                    <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                    <td class="text-left">{{ $request->name }}</td>
-                                    <td class="text-left">
-                                        @if ($request->name != 'Remote Work - Terminate Agreement')
-                                            @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                            @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                @if((empty($newData->EMA_EMPLOYEE_EIN) && empty($newData->CON_EMPLOYEE_EIN)) && $request->request_status == 'COMPLETED')
+                                @else
+                                    <tr>
+                                        <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
+                                        <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
+                                        <td class="text-left">
+                                            @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
+                                                @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
+                                                    {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
+                                                @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
+                                                    {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                                @endif
                                             @endif
-                                        @endif
-                                    </td>
-                                    <td class="text-left">
-                                        @if ($request->name != 'Remote Work - Terminate Agreement')
-                                            @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                {{ $newData->EMA_EMPLOYEE_EIN }}
-                                            @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                {{ $newData->CON_EMPLOYEE_EIN }}
+                                        </td>
+                                        <td class="text-left">
+                                            @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
+                                                @if (!empty($newData->EMA_EMPLOYEE_EIN))
+                                                    {{ $newData->EMA_EMPLOYEE_EIN }}
+                                                @elseif (!empty($newData->CON_EMPLOYEE_EIN))
+                                                    {{ $newData->CON_EMPLOYEE_EIN }}
+                                                @endif
                                             @endif
-                                        @endif
-                                    </td>
-                                    <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                    <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                    <td class="text-left">{{ $request->request_status }}</td>
-                                    <td class="text-right">
-                                        <a href="/requests/{{ $request->request_id }}"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
+                                        <td class="text-left">{{ $newCompletedDateFormat }}</td>
+                                        <td class="text-left">{{ $request->request_status }}</td>
+                                        <td class="text-right">
+                                            @if ($request->request_status != 'COMPLETED')
+                                                <a href="#"><i class="fas fa-people-arrows" style="color: #71A2D4;" title="Reassign Request" onclick="reassign({{ $request->request_id }});"></i></a>&nbsp;
+                                            @endif
+                                            <a href="/requests/{{ $request->request_id }}"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
+                                        </td>
+                                    </tr>
+                                @endif
                             @endif
                         @endif
                     @endforeach
@@ -148,6 +154,38 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="showReassing" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reassignTitle"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger alert-dismissible fade show" style="display: none" role="alert" id="divMessageError">
+                        The <strong>Reassign to:</strong> field is required.
+                    </div>
+                    <div class="form-group">
+                        <strong>Current User: </strong><br><span id="spanCurrentUser"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="selectUserId"><strong>Reassign to:</strong></label>
+                        <select class="select2 form-control" id="selectUserId" required>
+
+                        </select>
+                    </div>
+                    <div style="display: none;" id="divTaskId">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="buttonReassign">Reassign</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @section('js')
 <script>
@@ -162,6 +200,44 @@
 </script>
 <script type="text/javascript">
     $(document).ready( function () {
+        $('th').on("click", function (event) {
+            if($(event.target).is("input")){
+                event.stopImmediatePropagation();
+            }
+        });
+
+        let currentUser = {!! Auth::user() !!};
+        $("#selectUserId").select2({
+            ajax: {
+                url: '/api/1.0/adoa/get-users-agency',
+                dataType: 'json',
+                data: function (data) {
+                    return {
+                        searchTerm: data.term,
+                        agency: currentUser.meta.agency,
+                        employee_process_level: currentUser.meta.employee_process_level
+                    };
+                },
+                processResults: function (response) {
+                    let list = $.map(response, function (obj) {
+                        obj.id   = obj.id;
+                        obj.text = obj.firstname + ' ' + obj.lastname  + ' - '  + obj.agency + ' - ' + obj.username;
+                        return obj;
+                       });
+                    return {
+                        results: list
+                    };
+                },
+                headers: {
+                    "X-CSRF-TOKEN" : "{{ csrf_token() }}",
+                    "Content-Type" : "application/json",
+                },
+                cache: true
+            },
+            placeholder: 'Select user...',
+            width: '100%',
+            minimumInputLength: 2
+        });
         var table = $('#listRequestsAgency').DataTable({
             "initComplete": function () {
                 count = 0;
@@ -214,6 +290,38 @@
             "order": [[ 0, "desc" ]],
             "pageLength": 25
         });
+
+        window.reassign = function(request) {
+            ProcessMaker.apiClient.get('adoa/get-task-agency/' + request).then(responseTask => {
+                $('#reassignTitle').html('Reassign request # <strong id="strongRequestId">' + request + '</strong>');
+                $('#spanCurrentUser').html('');
+                $('#spanCurrentUser').html(responseTask.data[0].firstname + ' ' + responseTask.data[0].lastname);
+                $('#divTaskId').html('');
+                $('#divTaskId').html(responseTask.data[0].id);
+                $('#showReassing').modal('show');
+            });
+        }
+
+        $('#buttonReassign').click(function(event){
+            if ($('#selectUserId').val() == null) {
+                $('#divMessageError').css("display", "");
+            } else {
+                ProcessMaker.confirmModal('Confirm', '<div class="text-left">Are you sure that you want to reassign the request # ' + $('#strongRequestId').text() + ' from ' + $('#spanCurrentUser').text() + ' to ' + $('#selectUserId option:selected').text() + '?</div>', '', () => {
+                    ProcessMaker.apiClient.put('tasks/' + $('#divTaskId').text(), {user_id: $('#selectUserId').val()});
+                    ProcessMaker.alert('The request was reassigned successfully! Your browser will be reloaded!', 'success');
+                    $('#showReassing').modal('hide');
+                    setTimeout(function(){
+                        location.reload();
+                    }, 3000);
+                });
+                $('#divMessageError').css("display", "none");
+            }
+        });
+
+        $('#showReassing').on('hidden.bs.modal', function () {
+            $('#selectUserId').val(null).trigger('change');
+            $('#divMessageError').css("display", "none");
+        })
     });
 </script>
 @endsection

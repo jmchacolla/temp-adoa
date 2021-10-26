@@ -20,15 +20,15 @@ class MigrateUsers implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     private $users = [];
-    
+
     private $createdUsers = 0;
-    
+
     private $updatedUsers = 0;
-    
+
     private $password;
-    
+
     private $url;
-    
+
     /**
      * The number of seconds the job can run before timing out.
      *
@@ -57,39 +57,44 @@ class MigrateUsers implements ShouldQueue
         $this->loadExistingUsers();
         $this->deactivateExistingUsers();
         $this->importAdoaExternalUsers([$this, 'saveUserInformation']);
-        
+
         ThrowSignalEvent::dispatch('adoa_migration', [
             'created_users' => $this->createdUsers,
             'updated_users' => $this->updatedUsers,
         ]);
     }
-    
+
     private function loadExistingUsers()
     {
         User::select('id', 'username')->get()->each(function($user) {
             $this->users[$user->id] = $user->username;
         });
     }
-    
+
     private function deactivateExistingUsers()
     {
         User::where('status', 'ACTIVE')
             ->where('username', '!=', 'admin')
             ->where('username', '!=', '_pm4_anon_user')
+            ->whereNotIn('id', function($query) {
+                $query->selectRaw('member_id')
+                    ->from('group_members')
+                    ->where('group_id', 8);
+            })
             ->update(['status' => 'INACTIVE']);
     }
-    
+
     public function importAdoaExternalUsers($callback)
     {
         $csvPath = $this->download();
         $this->readCsv($csvPath, $callback);
         unlink($csvPath);
     }
-    
+
     private function newOrExistingUser($import)
     {
         $id = array_search($import['EMPLOYEE'], $this->users);
-        
+
         if ($id !== false) {
             $this->updatedUsers++;
             return User::find($id);
@@ -98,12 +103,12 @@ class MigrateUsers implements ShouldQueue
             return new User;
         }
     }
-    
+
     private function generateEmail($import)
     {
         return trim($import['EMPLOYEE']) . '@hris.az.gov';
     }
-    
+
     private function generatePassword()
     {
         $this->password = Hash::make(Str::random(20));
@@ -112,8 +117,6 @@ class MigrateUsers implements ShouldQueue
     private function saveUserInformation($import)
     {
         $user = $this->newOrExistingUser($import);
-
-        //$agencyInfo = $this->getAgencyInformation(trim($import['AGENCY']));
 
         $user->fill([
             'email' => $this->generateEmail($import),
@@ -137,9 +140,8 @@ class MigrateUsers implements ShouldQueue
                 'process_level' => trim($import['PROCESS_LEVEL']),
                 'department' => trim($import['DEPARTMENT']),
                 'term_date' => trim($import['TERM_DATE']),
-                'flsa_status' => trim($import['FLSA_STATUS'])
-                //'cycle_begin' => (!empty($agencyInfo->rows[0][1])) ? $agencyInfo->rows[0][1] : '',
-                //'cycle_end' => (!empty($agencyInfo->rows[0][2])) ? $agencyInfo->rows[0][2] : ''
+                'flsa_status' => trim($import['FLSA_STATUS']),
+                'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
             ],
         ]);
 
@@ -151,14 +153,14 @@ class MigrateUsers implements ShouldQueue
                 'adoa_user' => $import,
             ]);
         }
-        
+
         $groups = [];
         $groups[] = config('adoa.employee_group_id');
-        
+
         if (trim($import['MANAGER']) == 'Y') {
             $groups[] = config('adoa.manager_group_id');
         }
-        
+
         try {
             $user->groups()->sync($groups);
         } catch (Throwable $e) {
@@ -207,30 +209,4 @@ class MigrateUsers implements ShouldQueue
             'headers' => $adoaHeaders
         ]);
     }
-
-    /*public function getAgencyInformation($agency)
-    {
-        try {
-            $adoaHeaders = array(
-                "Accept: application/json",
-                "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
-            );
-            $url = 'https://hrsieapitest.azdoa.gov/api/hrorg/AzPerformAgencyCFG.json?agency=' . $agency;
-
-            $curl = curl_init($url);
-            curl_setopt($curl, CURLOPT_URL, $url);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_HTTPHEADER, $adoaHeaders);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-
-            $resp = curl_exec($curl);
-            curl_close($curl);
-
-            $agencyInformation = json_decode($resp);
-            return $agencyInformation;
-        } catch (Exception $error) {
-            return $response['error'] = 'There are errors in the Function: getAdoaExternalUsers ' . $error->getMessage();
-        }
-    }*/
 }

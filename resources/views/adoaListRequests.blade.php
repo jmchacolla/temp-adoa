@@ -57,13 +57,13 @@
                                 }
                             @endphp
                             @if (($request->element_type == 'task' && $request->task_status == 'ACTIVE') || ($request->element_type == 'end_event' && $request->task_status == 'CLOSED' && $request->element_name == 'Completed' && $request->request_status == 'COMPLETED'))
-                                @if (!empty($request->file_id) || !is_null($request->file_id))
-                                    @if (is_null($newCustomProperties->createdBy))
+                                @if ((!empty($request->file_id) || !is_null($request->file_id)) && is_null($newCustomProperties->createdBy))
+
                                         <tr>
                                             <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                            <td class="text-left">{{ $request->name }}</td>
+                                            <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
                                             <td class="text-left">
-                                                @if ($request->name == 'Remote Work - Terminate Agreement')
+                                                @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
                                                     @php
                                                         $dataName = $newCustomProperties->data_name;
                                                         $nameFile = explode('_', $dataName);
@@ -80,7 +80,7 @@
                                                 @endif
                                             </td>
                                             <td class="text-left">
-                                                @if ($request->name == 'Remote Work - Terminate Agreement')
+                                                @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
                                                     @if (array_key_exists(5, $nameFile))
                                                         {{ $nameFile[5] }}
                                                     @endif
@@ -103,40 +103,42 @@
                                                 <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
                                             </td>
                                         </tr>
-                                    @endif
+
                                 @else
-                                    <tr>
-                                        <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                        <td class="text-left">{{ $request->name }}</td>
-                                        <td class="text-left">
-                                            @if ($request->name != 'Remote Work - Terminate Agreement')
-                                                @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                    {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                                @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                    {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                    @if($request->request_status != 'COMPLETED')
+                                        <tr>
+                                            <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
+                                            <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
+                                            <td class="text-left">
+                                                @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
+                                                    @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
+                                                        {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
+                                                    @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
+                                                        {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                                    @endif
                                                 @endif
-                                            @endif
-                                        </td>
-                                        <td class="text-left">
-                                            @if ($request->name != 'Remote Work - Terminate Agreement')
-                                                @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                    {{ $newData->EMA_EMPLOYEE_EIN }}
-                                                @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                    {{ $newData->CON_EMPLOYEE_EIN }}
+                                            </td>
+                                            <td class="text-left">
+                                                @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
+                                                    @if (!empty($newData->EMA_EMPLOYEE_EIN))
+                                                        {{ $newData->EMA_EMPLOYEE_EIN }}
+                                                    @elseif (!empty($newData->CON_EMPLOYEE_EIN))
+                                                        {{ $newData->CON_EMPLOYEE_EIN }}
+                                                    @endif
                                                 @endif
-                                            @endif
-                                        </td>
-                                        <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                        <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                        <td class="text-left">{{ $request->element_name }}</td>
-                                        <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
-                                        <td class="text-left">{{ $request->request_status }}</td>
-                                        <td class="text-right">
-                                            @if ($request->user_id == Auth::user()->id)
-                                            <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
-                                            @endif
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
+                                            <td class="text-left">{{ $newCompletedDateFormat }}</td>
+                                            <td class="text-left">{{ $request->element_name }}</td>
+                                            <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
+                                            <td class="text-left">{{ $request->request_status }}</td>
+                                            <td class="text-right">
+                                                @if ($request->user_id == Auth::user()->id)
+                                                <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @endif
                             @endif
                         @endif
@@ -172,6 +174,12 @@
 </script>
 <script type="text/javascript">
     $(document).ready( function () {
+        $('th').on("click", function (event) {
+            if($(event.target).is("input")){
+                event.stopImmediatePropagation();
+            }
+        });
+
         var table = $('#listRequests').DataTable({
             "initComplete": function () {
                 count = 0;

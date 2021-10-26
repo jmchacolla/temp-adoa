@@ -5,6 +5,7 @@ use ProcessMaker\Http\Controllers\Controller;
 use ProcessMaker\Http\Resources\ApiCollection;
 use ProcessMaker\Package\Adoa\Models\Sample;
 use ProcessMaker\Models\ProcessRequest;
+use ProcessMaker\Models\EnvironmentVariable;
 use Spatie\MediaLibrary\Models\Media;
 use RBAC;
 use Illuminate\Http\Request;
@@ -90,11 +91,13 @@ class AdoaController extends Controller
             ->leftJoin('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
             ->leftJoin('media', 'process_request_tokens.process_request_id', '=', 'media.model_id')
             ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
+            ->join('processes', 'process_request_tokens.process_id', '=', 'processes.id')
             ->select('process_request_tokens.id AS task_id',
                 'process_request_tokens.element_name',
                 'process_request_tokens.element_type',
                 'process_request_tokens.process_request_id as request_id',
                 'process_request_tokens.status as task_status',
+                'process_requests.process_id',
                 'process_requests.name',
                 'process_requests.status as request_status',
                 'process_requests.data',
@@ -106,8 +109,13 @@ class AdoaController extends Controller
                 'users.lastname',
                 'process_request_tokens.user_id as user_id')
             ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
+            ->where('processes.status', 'ACTIVE')
+            ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
-            ->where('process_requests.user_id', Auth::user()->id)
+            ->where(function ($query) {
+                $query->where('process_requests.user_id', Auth::user()->id)
+                    ->orWhere('process_requests.data->TA_USER_ID', Auth::user()->id);
+            })
             ->whereIn('process_request_tokens.id', function($query) {
                 $query->selectRaw('max(id)')
                     ->from('process_request_tokens')
@@ -117,13 +125,12 @@ class AdoaController extends Controller
             ->orderBy('process_request_tokens.process_request_id', 'desc')
             ->get();
 
-        return view('adoa::adoaListRequests', ['adoaListRequests' => $adoaListRequests]);
+        return view('adoa::adoaListRequests', ['adoaListRequests' => $adoaListRequests, 'process_id_terminate_rwa_send_email_and_pdf' => EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value]);
     }
 
     public function getListRequestsAgency($groupId) {
         $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
         if (count($member) > 0 && $groupId == config('adoa.agency_admin_group_id')) {
-
             //Getting Agency Information from meta data
             $agencies = explode(',', Auth::user()->meta->agency);
             $agenciesArray = array();
@@ -150,11 +157,26 @@ class AdoaController extends Controller
                 $flagProcess = 1;
             }
 
+            //Getting Agency Information from meta data
+            $levels = explode(',', Auth::user()->meta->employee_process_level);
+            $levelsArray = array();
+
+            if (count($levels) == 1 && $levels[0] == 'ALL') {
+                $flagLevel = 0;
+            } else {
+                foreach($levels as $level) {
+                    $levelsArray[] = $level;
+                }
+                $flagLevel = 1;
+            }
+
             //Query to get requests for agency admin
             $adoaListRequestsAgency = DB::table('process_requests')
                 ->leftJoin('media', 'process_requests.id', '=', 'media.model_id')
                 ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
+                ->join('processes', 'process_requests.process_id', '=', 'processes.id')
                 ->select('process_requests.id as request_id',
+                    'process_requests.process_id',
                     'process_requests.name',
                     'process_requests.status as request_status',
                     'process_requests.data',
@@ -165,8 +187,8 @@ class AdoaController extends Controller
                     'users.firstname',
                     'users.lastname')
                 ->where('process_requests.callable_id', 'ProcessId')
-                ->whereNull('process_requests.data->in_progress_request')
-                ->WhereNull('process_requests.data->agreement_in_progress')
+                ->where('processes.status', 'ACTIVE')
+                ->whereNotIn('processes.process_category_id', [1, 2])
                 ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED']);
 
             if ($flagAgency == 1) {
@@ -179,11 +201,16 @@ class AdoaController extends Controller
                     ->whereIn('process_requests.process_id', $processesArray);
             }
 
+            if ($flagLevel == 1) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->whereIn('users.meta->process_level', $levelsArray);
+            }
+
             $adoaListRequestsAgency = $adoaListRequestsAgency
                 ->orderBy('process_requests.id', 'desc')
                 ->get();
 
-            return view('adoa::adoaAdminAgency', ['adoaListRequestsAgency' => $adoaListRequestsAgency, 'agencyName' => Auth::user()->meta->agency]);
+            return view('adoa::adoaAdminAgency', ['adoaListRequestsAgency' => $adoaListRequestsAgency, 'agencyName' => Auth::user()->meta->agency, 'process_id_terminate_rwa_send_email_and_pdf' => EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value]);
         } else {
             return abort(403, 'Unauthorized action.');
         }
@@ -192,7 +219,9 @@ class AdoaController extends Controller
     public function getListShared() {
         $adoaListShared = DB::table('process_requests')
             ->join('media', 'process_requests.id', '=', 'media.model_id')
+            ->join('processes', 'process_requests.process_id', '=', 'processes.id')
             ->select('process_requests.id as request_id',
+                'process_requests.process_id',
                 'process_requests.name',
                 'process_requests.data',
                 'process_requests.created_at',
@@ -200,16 +229,24 @@ class AdoaController extends Controller
                 'media.id AS file_id',
                 'media.custom_properties')
             ->where('media.disk', 'public')
-            ->where('process_requests.status', 'COMPLETED')
-            ->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
-            ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
-            ->orWhere('process_requests.data->SUPERVISOR_EIN', Auth::user()->username)
-            ->orWhere('process_requests.data->UPLINE_EIN', Auth::user()->username)
+            ->where('processes.status', 'ACTIVE')
             ->where('media.custom_properties->createdBy', 'null')
+            ->where('process_requests.status', 'COMPLETED')
+            ->whereNotIn('processes.process_category_id', [1, 2])
+            ->where(function ($query) {
+                $query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->EMA_SUPERVISOR_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->EMA_UPLINE_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->CON_SUPERVISOR_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->CON_UPLINE_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->SUPERVISOR_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->UPLINE_EIN', Auth::user()->username);
+            })
             ->orderBy('process_requests.id', 'desc')
             ->get();
 
-        return view('adoa::adoaListShared', ['adoaListShared' => $adoaListShared]);
+        return view('adoa::adoaListShared', ['adoaListShared' => $adoaListShared, 'process_id_terminate_rwa_send_email_and_pdf' => EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value]);
     }
 
     public function viewFile(ProcessRequest $request, Media $media)
@@ -291,6 +328,17 @@ class AdoaController extends Controller
             ->get();
     }
 
+    public function getTaskAgency($request_id) {
+        return DB::table('process_request_tokens')
+            ->join('users', 'process_request_tokens.user_id', '=', 'users.id')
+            ->select('process_request_tokens.id',
+                'users.firstname',
+                'users.lastname')
+            ->where('process_request_tokens.status', 'ACTIVE')
+            ->where('process_request_tokens.process_request_id', $request_id)
+            ->get();
+    }
+
     public function getAgencyEnabled($agency)
     {
         try {
@@ -298,8 +346,7 @@ class AdoaController extends Controller
                 "Accept: application/json",
                 "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
             );
-            $url = 'https://hrsieapi.azdoa.gov/api/hrorg/AzPerformAgencyCFG.json?agency=' . $agency;
-            //$url = 'https://hrsieapitest.azdoa.gov/api/hrorg/AzPerformAgencyCFG.json?agency=' . $agency;
+            $url = EnvironmentVariable::whereName('base_url_api_adoa')->first()->value . "AzPerformAgencyCFG.json?agency=" . $agency;
 
             $curl = curl_init($url);
             curl_setopt($curl, CURLOPT_URL, $url);
@@ -315,5 +362,58 @@ class AdoaController extends Controller
         } catch (Exception $error) {
             return $response['error'] = 'There are errors in the Function: getAgencyEnabled ' . $error->getMessage();
         }
+    }
+
+    public function getUsersByAgency(Request $request) {
+        $searchTerm  = $request['searchTerm'];
+
+        //Getting Agencies Information from meta data
+        $agencies = explode(',', $request['agency']);
+        $agenciesArray = array();
+
+        if (count($agencies) == 1 && $agencies[0] == 'ALL') {
+            $flagAgency = 0;
+        } else {
+            foreach($agencies as $agency) {
+                $agenciesArray[] = $agency;
+            }
+            $flagAgency = 1;
+        }
+
+        //Getting Process Level Information from meta data
+        $levels = explode(',', $request['employee_process_level']);
+        $levelsArray = array();
+
+        if (count($levels) == 1 && $levels[0] == 'ALL') {
+            $flagLevel = 0;
+        } else {
+            foreach($levels as $level) {
+                $levelsArray[] = $level;
+            }
+            $flagLevel = 1;
+        }
+
+        $usersByAgency = DB::table('users')
+            ->select('id', 'firstname', 'lastname', 'username', 'meta->agency as agency')
+            ->where('status', 'ACTIVE');
+
+        if ($flagAgency == 1) {
+            $usersByAgency = $usersByAgency
+                ->whereIn('users.meta->agency', $agenciesArray);
+        }
+
+        if ($flagLevel == 1) {
+            $usersByAgency = $usersByAgency
+                ->whereIn('users.meta->process_level', $levelsArray);
+        }
+
+        $usersByAgency = $usersByAgency
+            ->when($searchTerm, function ($query, $searchTerm) {
+                return $query->where(DB::raw('CONCAT_WS(" ", firstname, lastname, username)'), 'like', '%' . $searchTerm . '%');
+                })
+            ->orderBy('firstname')
+            ->get();
+
+        return $usersByAgency;
     }
 }
