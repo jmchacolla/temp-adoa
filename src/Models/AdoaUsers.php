@@ -197,7 +197,10 @@ class AdoaUsers extends Model
             'meta->agency as agency',
             'meta->agency_name as agency_name'
             )
-            ->where('meta->super_position', $position)
+            ->where(function ($query) use ($position){
+                $query->where('meta->super_position', $position)
+                    ->orWhere('meta->indirect_super_position', $position);
+            })
             ->where('status', 'ACTIVE')
             ->orderBy('firstname', 'asc')
             ->get()

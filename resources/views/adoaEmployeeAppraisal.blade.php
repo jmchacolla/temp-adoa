@@ -426,22 +426,32 @@
                     getAppraisalList() {
                         let initDate = this.initDate + ' 00:00:00';
                         let endDate  = this.endDate + ' 23:59:59';
-                        let pmql = '';
-                        pmql += '(data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected+ '") AND (data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected + '") ';
-                        pmql += 'AND (data.DATE>"' + initDate + '")';
-                        pmql += 'AND (data.DATE<"' + endDate + '")';
-                        let appraisalSelected = '';
-                        this.documentsSelected.forEach(function(appraisalType){
-                            appraisalSelected += 'data.AZP_PROCESS like "' + appraisalType + '" or ';
+                        // let pmql = '';
+                        // pmql += '(data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected+ '") AND (data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected + '") ';
+                        // pmql += 'AND (data.DATE>"' + initDate + '")';
+                        // pmql += 'AND (data.DATE<"' + endDate + '")';
+                        // let appraisalSelected = '';
+                        // this.documentsSelected.forEach(function(appraisalType){
+                        //     appraisalSelected += 'data.AZP_PROCESS like "' + appraisalType + '" or ';
 
-                        });
-                        let lastIndex = appraisalSelected.lastIndexOf("or ");
-                        appraisalSelected = appraisalSelected.substring(0, lastIndex);
-                        let uri = decodeURI('/collections/' + this.collectionId + '/records?pmql=(' + pmql + ' AND (' + appraisalSelected + '))');
+                        // });
+                        // let lastIndex = appraisalSelected.lastIndexOf("or ");
+                        // appraisalSelected = appraisalSelected.substring(0, lastIndex);
+                        // let uri = decodeURI('/collections/' + this.collectionId + '/records?pmql=(' + pmql + ' AND (' + appraisalSelected + '))');
+                        let azpData = {
+                            'employee_id' : this.adoaEmployeeSelected,
+                            'status' : 'COMPLETED',
+                            'initDate' : initDate,
+                            'endDate' : endDate,
+                            'documentSelected' : this.documentsSelected
+                        }
                         ProcessMaker.apiClient
-                        .get(decodeURI(uri))
+                        // .get(decodeURI(uri))
+                        .post('adoa/azp-collection/azp-report', azpData)
                         .then(response => {
-                            this.appraisalList = response.data.data;
+                            console.log(response);
+                            // this.appraisalList = response.data.data;
+                            this.appraisalList = response.data;
                             this.showList = true;
                             $('#appraisalList').DataTable().destroy();
                         })
@@ -547,39 +557,39 @@
                                 "order": [[ 0, "desc" ]],
                                 "data" : app.appraisalList,
                                 "columns": [
-                                    { "title": "Request No.",  "data": "data.REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "From", "data": "data.EVALUATOR_FIRSTNAME", "defaultContent": "",
+                                    { "title": "Request No.",  "data": "REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
+                                    { "title": "From", "data": "EVALUATOR_FIRSTNAME", "defaultContent": "",
                                         "render" : function (data,type, row) {
-                                            if(typeof(row.data.EVALUATOR_LAST_NAME) === 'undefined' ||  row.data.EVALUATOR_LAST_NAME == null
-                                            || typeof(row.data.EVALUATOR_FIRST_NAME) === 'undefined' || row.data.EVALUATOR_FIRST_NAME == null) {
+                                            if(typeof(row.EVALUATOR_LAST_NAME) === 'undefined' ||  row.EVALUATOR_LAST_NAME == null
+                                            || typeof(row.EVALUATOR_FIRST_NAME) === 'undefined' || row.EVALUATOR_FIRST_NAME == null) {
                                                 return 'No registered';
                                             }
-                                            return row.data.EVALUATOR_LAST_NAME + " " +  row.data.EVALUATOR_FIRST_NAME;
+                                            return row.EVALUATOR_LAST_NAME + " " +  row.EVALUATOR_FIRST_NAME;
                                         }
                                     },
                                     { "title": "To", "data": "fullname", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            if(typeof(row.data.EMPLOYEE_LAST_NAME) === 'undefined' || row.data.EMPLOYEE_LAST_NAME == null
-                                            || typeof(row.data.EMPLOYEE_FIRST_NAME) === 'undefined' || row.data.EMPLOYEE_FIRST_NAME == null) {
+                                            if(typeof(row.EMPLOYEE_LAST_NAME) === 'undefined' || row.EMPLOYEE_LAST_NAME == null
+                                            || typeof(row.EMPLOYEE_FIRST_NAME) === 'undefined' || row.EMPLOYEE_FIRST_NAME == null) {
                                                 return 'No registered';
                                             }
-                                            return row.data.EMPLOYEE_LAST_NAME + " " +  row.data.EMPLOYEE_FIRST_NAME
+                                            return row.EMPLOYEE_LAST_NAME + " " +  row.EMPLOYEE_FIRST_NAME
                                         }
                                     },
-                                    { "title": "EIN", "data": "DATA.EMPLOYEE_EIN", "defaultContent": "", "sortable": false},
+                                    { "title": "EIN", "data": "EMPLOYEE_EIN", "defaultContent": "", "sortable": false},
                                     { "title": "Type", "data": "type", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            return app.getAppraisalType(row.data.AZP_PROCESS);
+                                            return app.getAppraisalType(row.AZP_PROCESS);
                                         }
                                     },
                                     { "title": "Comments", "data": "content", "defaultContent": "",
                                         "render": function (data, type, row, meta) {
-                                            return app.getAppraisalContent(row.data.AZP_PROCESS, row.data.CONTENT)
+                                            return app.getAppraisalContent(row.AZP_PROCESS, row.CONTENT)
                                         }
                                     },
                                     { "title": "Date", "data": "date", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            let dateFormat = new Date(row.data.DATE);
+                                            let dateFormat = new Date(row.DATE);
 
                                             var dd   = String(dateFormat.getDate()).padStart(2, '0');
                                             var mm   = String(dateFormat.getMonth() + 1).padStart(2, '0');
@@ -587,16 +597,15 @@
 
                                             let date = mm + '-' + dd + '-' + yyyy;
                                             return date;
-
                                         }
                                     },
                                     {
                                         "title": "Actions", "data" : "", "sortable": false, "defaultContent": "",
                                         "render": function (data, type,row) {
                                             let html = '';
-                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
-                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
-                                            html += '<a href="/request/' + row.data.REQUEST_ID + '/files/' + row.data.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="/request/' + row.REQUEST_ID + '/files/' + row.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
 
                                             return html;
                                         }

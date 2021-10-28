@@ -31,4 +31,5 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::get('adoa/user/manager-employees/{user_id}', 'AdoaUsersController@getManagerEmployees');
     // Get collections records
     Route::post('adoa/rwa-collection/rwa-report', 'Api\AdoaCollectionController@getRwaReportByUser');
+    Route::post('adoa/azp-collection/azp-report', 'Api\AdoaCollectionController@getAzpReportByUser');
 });

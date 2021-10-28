@@ -29,4 +29,38 @@ class AdoaCollectionController extends Controller
         ->get();
         return $records;
     }
+
+    public function getAzpReportByUser(Request $request)
+    {
+        $collectionId = EnvironmentVariable::whereName('azp_lookup_collection_id')->first()->value;
+        $requestData = $request->all();
+        // return $requestData;
+
+        $records = DB::table('collection_' .  $collectionId)
+        ->where('data->EMPLOYEE_ID', $requestData['employee_id'])
+        ->where('data->STATUS', 'COMPLETED')
+        ->where('data->DATE', '>=', $requestData['initDate'])
+        ->where('data->DATE', '<=', $requestData['endDate'])
+        ->whereIn('data->AZP_PROCESS', $requestData['documentSelected'])
+
+        //  pmql += '(data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected+ '") AND (data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected + '") ';
+        // pmql += 'AND (data.DATE>"' + initDate + '")';
+        // pmql += 'AND (data.DATE<"' + endDate + '")';
+        ->select(
+            'data->REQUEST_ID as REQUEST_ID',
+            'data->EMPLOYEE_ID as EMPLOYEE_ID',
+            'data->EMPLOYEE_EIN as EMPLOYEE_EIN',
+            'data->EMPLOYEE_FIRST_NAME as EMPLOYEE_FIRST_NAME',
+            'data->EMPLOYEE_LAST_NAME as EMPLOYEE_LAST_NAME',
+            'data->EVALUATOR_FIRSTNAME as EVALUATOR_FIRSTNAME',
+            'data->EVALUATOR_LAST_NAME as EVALUATOR_LAST_NAME',
+            'data->AZP_PROCESS as AZP_PROCESS',
+            'data->CONTENT as CONTENT',
+            'data->DATE as DATE',
+            'data->FILE_ID as FILE_ID'
+        )
+        ->get();
+        return $records;
+
+    }
 }
