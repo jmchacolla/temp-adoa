@@ -390,10 +390,15 @@
                                     { "title": "EIN", "data": "data.ADOA_RWA_EIN", "defaultContent": "", "sortable": false, "class": "text-center"},
                                     { "title": "Type", "data": "data.ADOA_RWA_TYPE_REQUEST", "defaultContent": "", "sortable": false, "class": "text-center",
                                         "render":function (data, type, row) {
-                                            if (row.data.ADOA_RWA_TYPE_REQUEST == 'NEW') {
-                                                return '<span class="badge badge-info" style="background-color: #71A2D4 !important;">NEW</span>';
+                                            switch (row.data.ADOA_RWA_TYPE_REQUEST) {
+                                                case 'NEW':
+                                                    return '<span class="badge badge-info" style="background-color: #71A2D4 !important;">NEW</span>';
+                                                case 'RENEWAL':
+                                                    return '<span class="badge badge-info" style="background-color: #6cc5b9 !important;">RENEWAL</span>';
+                                                case 'TERMINATE':
+                                                default:
+                                                    return '<span class="badge badge-secondary">TERMINATE</span>';
                                             }
-                                            return '<span class="badge badge-secondary">TERMINATE</span>';
                                         }
                                     },
                                     { "title": "From", "data": "data.ADOA_RWA_REMOTE_AGREEMENT_START_DATE", "defaultContent": "", "class": "text-center"},
@@ -410,9 +415,6 @@
                                     }
                                 ]
                             }).draw();
-
-
-
                         });
 
                     }
