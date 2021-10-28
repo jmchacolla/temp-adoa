@@ -350,11 +350,11 @@
                     },
                     getRwaList() {
                         ProcessMaker.apiClient
-                        .get(
-                            '/collections/' + this.agreementCollectionId + '/records?pmql=((data.USER_ID = "' + this.adoaEmployeeSelected +'") AND (data.STATUS = "COMPLETED"))'
+                        .post(
+                            'adoa/rwa-collection/rwa-report',{'user_id': this.adoaEmployeeSelected}
                         )
                         .then(response => {
-                            this.rwaList = response.data.data;
+                            this.rwaList = response.data;
                             this.showList = true;
                             $('#rwaList').DataTable().destroy();
                         })
@@ -381,16 +381,16 @@
                                 "order": [[ 0, "desc" ]],
                                 "data" : app.rwaList,
                                 "columns": [
-                                    { "title": "Request No.",  "data": "data.REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "Full Name", "data": "data.ADOA_RWA_EMPLOYEE_NAME", "defaultContent": "", "class": "text-center",
+                                    { "title": "Request No.",  "data": "REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
+                                    { "title": "Full Name", "data": "ADOA_RWA_EMPLOYEE_NAME", "defaultContent": "", "class": "text-center",
                                         "render": function (data, type, row) {
-                                            return row.data.ADOA_RWA_EMPLOYEE_NAME.toUpperCase();
+                                            return row.ADOA_RWA_EMPLOYEE_NAME.toUpperCase();
                                         }
                                     },
-                                    { "title": "EIN", "data": "data.ADOA_RWA_EIN", "defaultContent": "", "sortable": false, "class": "text-center"},
-                                    { "title": "Type", "data": "data.ADOA_RWA_TYPE_REQUEST", "defaultContent": "", "sortable": false, "class": "text-center",
+                                    { "title": "EIN", "data": "ADOA_RWA_EIN", "defaultContent": "", "sortable": false, "class": "text-center"},
+                                    { "title": "Type", "data": "ADOA_RWA_TYPE_REQUEST", "defaultContent": "", "sortable": false, "class": "text-center",
                                         "render":function (data, type, row) {
-                                            switch (row.data.ADOA_RWA_TYPE_REQUEST) {
+                                            switch (row.ADOA_RWA_TYPE_REQUEST) {
                                                 case 'NEW':
                                                     return '<span class="badge badge-info" style="background-color: #71A2D4 !important;">NEW</span>';
                                                 case 'RENEWAL':
@@ -401,15 +401,15 @@
                                             }
                                         }
                                     },
-                                    { "title": "From", "data": "data.ADOA_RWA_REMOTE_AGREEMENT_START_DATE", "defaultContent": "", "class": "text-center"},
-                                    { "title": "To", "data": "data.ADOA_RWA_REMOTE_AGREEMENT_END_DATE", "defaultContent": "", "class": "text-center"},
+                                    { "title": "From", "data": "ADOA_RWA_REMOTE_AGREEMENT_START_DATE", "defaultContent": "", "class": "text-center"},
+                                    { "title": "To", "data": "ADOA_RWA_REMOTE_AGREEMENT_END_DATE", "defaultContent": "", "class": "text-center"},
                                     {
                                         "title": "Actions", "data" : "", "sortable": false, "defaultContent": "", "class": "text-center",
                                         "render": function (data, type, row) {
                                             let html = '';
-                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
-                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
-                                            html += '<a href="/request/' + row.data.REQUEST_ID + '/files/' + row.data.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="/request/' + row.REQUEST_ID + '/files/' + row.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
                                             return html;
                                         }
                                     }

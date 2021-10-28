@@ -29,4 +29,6 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::get('adoa/users/admin', 'AdoaMigrateUsersController@migrateAdministrators');
     // Get manager's employees by manager user Id
     Route::get('adoa/user/manager-employees/{user_id}', 'AdoaUsersController@getManagerEmployees');
+    // Get collections records
+    Route::post('adoa/rwa-collection/rwa-report', 'Api\AdoaCollectionController@getRwaReportByUser');
 });
