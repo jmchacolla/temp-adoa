@@ -81,22 +81,38 @@
 
 <div class="container border" id="app" style="padding:20px;">
     <div class="row" v-cloak>
-        <div class="col-lg-12 col-md-12 col-sm-12" style="text-align: center;">
-            <p><h2> Print Remote Work Agreement </h2></p>
+        <div style="text-align: center;width: 100%;">
+            <h2> Print Remote Work Agreement </h2>
+            <br>
+            <br>
         </div>
 
-        <div class="form-group col-lg-8 col-md-8 col-sm-12 offset-lg-2 offset-md-2 " style="display: flex;align-items: right;">
-            <label for="adoaEmployee" style="width:50%;" class="label-color">
-                Please select the employee name:
-            </label>
-            <select class="form-control" id="adoaEmployeeAdmin" style="width:50%;" v-model="adoaEmployeeSelected" v-if="isSysAdmin"></select>
-            <select class="form-control" id="adoaEmployee" style="width:50%;" v-model="adoaEmployeeSelected" v-if="!isSysAdmin"></select>
-            <div v-if="loading" style="display:inherit;">
-                <button class="btn btn-default">
-                    <span class="spinner-border spinner-border-sm text-primary"></span>
-                </button>
-                <small class="text-secondary">We are loading your data, please be patient...</small>
+        <div id="dropdown-container" class="col col-lg-8 col-md-8 col-sm-12 offset-lg-2 offset-md-2 " style="display: flex;overflow: visible;">
+            <div class="col col-lg-5 col-md-5 col-sm-12">
+                <label for="adoaEmployee" class="label-color">
+                    Please select the employee name:
+                </label>
             </div>
+            <div class="col col-lg-6 col-md-6 col-sm-12">
+                <select class="form-control" id="adoaEmployeeAdmin"  v-model="adoaEmployeeSelected" v-if="isSysAdmin"></select>
+                <p class="col col-12" v-show="!isSysAdmin"><select class="form-control" id="adoaEmployeeLevel_1" level="1" style="width:100%;" v-model="adoaEmployeeSelected" v-if="!isSysAdmin"></select></p>
+                <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_2.length>1"><select class="form-control" id="adoaEmployeeLevel_2" level="2" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_3.length>1"><select class="form-control" id="adoaEmployeeLevel_3" level="3" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_4.length>1"><select class="form-control" id="adoaEmployeeLevel_4" level="4" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_5.length>1"><select class="form-control" id="adoaEmployeeLevel_5" level="5" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_6.length>1"><select class="form-control" id="adoaEmployeeLevel_6" level="5" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_7.length>1"><select class="form-control" id="adoaEmployeeLevel_7" level="5" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+            </div>
+
+            <div class="col col-1">
+                <div v-if="loading" style="display:inherit;overflow: visible;">
+                    <button class="btn btn-default">
+                        <span class="spinner-border spinner-border-sm text-primary"></span>
+                    </button>
+                    <small class="text-secondary">Loading...</small>
+                </div>
+            </div>
+
         </div>
 
         <div class="col-lg-12 col-md-12 col-sm-12" style="margin:10px;">
@@ -195,13 +211,81 @@
                         rwaList : [],
                         showList : false,
                         currentUserId : {{ auth()->user()->id }},
+                        currentUser : {!! auth()->user() !!},
                         isManager: {{ empty($isManager) ? 'false' : $isManager }},
                         isSysAdmin: {{ empty($isSysAdmin) ? 'false' : $isSysAdmin }},
                         agreementCollectionId: {{ $agreementCollectionId }},
-                        loading:false
+                        loading:false,
+                        loadingEmployeeList:false,
+                        employeeLevel : {
+                            "level_1":[],
+                            "level_2":[],
+                            "level_3":[],
+                            "level_4":[],
+                            "level_5":[],
+                            "level_6":[],
+                            "level_7":[]
+                        }
                     }
                 },
                 methods : {
+                    populateEmployeDropdown(level, employeeId){
+                        this.loading = true;
+                        ProcessMaker.apiClient
+                        .get(
+                            "/adoa/user/manager-employees/" + employeeId
+                        )
+                        .then(function(response) {
+                            let newData= [{ 'id' : '', 'text' : '- Select -'}];
+                            if(level == 1) {
+                                let userData =[{
+                                        'id' : app.currentUser.id,
+                                        'text' : app.currentUser.firstname + ' ' + app.currentUser.lastname,
+                                        'ein' : app.currentUser.meta.ein,
+                                        'agency_name' : app.currentUser.meta.agency_name
+                                    }];
+                                    newData = newData.concat(userData);
+                            }
+                            let data = $.map(response.data, function (obj) {
+                                obj.id = obj.id;
+                                obj.text = obj.firstname + ' ' + obj.lastname;
+                                return obj;
+                            });
+
+                            app.employeeLevel['level_' + level] = newData.concat(data);
+
+                            $('#adoaEmployeeLevel_' + level)
+                            .select2({
+                                placeholder: 'Select an option',
+                                data : app.employeeLevel['level_' + level]
+                            })
+                            .on('select2:select', function () {
+                                app.rwaList = [];
+                                app.showList = false;
+                                let value = $("#adoaEmployeeLevel_" + level).select2('data');
+
+                                app.adoaEmployeeSelected = value[0].id;
+                                app.adoaEmployeeName = value[0].text;
+                                app.adoaEin = value[0].ein;
+                                app.agencyName = value[0].agency_name;
+
+                                for (let index = level + 1 ; index < 6; index++) {
+                                    app.employeeLevel['level_' + index] = [];
+                                    $('#adoaEmployeeLevel_' + index)
+                                    .select2({
+                                        placeholder: 'Select an option',
+                                        data : []
+                                    });
+                                    $('#adoaEmployeeLevel_' + index).empty();
+                                }
+                                app.populateEmployeDropdown(parseInt(level) + 1, parseInt(app.adoaEmployeeSelected));
+                            });
+                            app.loading = false;
+                        })
+                        .catch(function(response) {
+                            app.loading = false;
+                        });
+                    },
                     populateEmployeeList(){
                         this.loading = true;
                         ProcessMaker.apiClient
@@ -209,40 +293,6 @@
                             "/adoa/employee-list/" + this.currentUserId
                         )
                         .then(function(response) {
-                            let newData= [{ 'id' : '', 'text' : '- Select -'}];
-                            newData = newData.concat(response.data);
-
-                            app.adoaEmployee = newData;
-
-                            $('#adoaEmployee')
-                            .select2({
-                                placeholder: 'Select an option',
-                                data : app.adoaEmployee
-                            })
-                            .on('select2:select', function () {
-                                app.rwaList = [];
-                                app.showList = false;
-                                var value = $("#adoaEmployee").select2('data');
-                                app.adoaEmployeeSelected = value[0].id;
-
-                                if(self.adoaEmployeeSelected != '') {
-                                    ProcessMaker.apiClient
-                                    .get("/adoa/user/" + app.adoaEmployeeSelected)
-                                    .then(response => {
-                                        app.adoaEmployeeName = (response.data.firstname + ' ' + response.data.lastname).toUpperCase();
-                                        app.adoaEin          = response.data.meta.ein;
-                                        app.agencyName       = response.data.meta.agency_name;
-                                    })
-                                    .catch(response => {
-                                        console.log(response);
-                                    });
-                                } else {
-                                    app.adoaEmployeeName = '';
-                                    app.adoaEin          = '';
-                                    app.agencyName       = '';
-                                }
-                            });
-
                             $('#adoaEmployeeAdmin')
                             .select2({
                                 placeholder: 'Select an option',
@@ -268,6 +318,8 @@
                                 }
                             })
                             .on('select2:select', function () {
+                                let currentLevel = 1;
+
                                 app.rwaList = [];
                                 app.showList = false;
                                 var value = $("#adoaEmployeeAdmin").select2('data');
@@ -312,7 +364,11 @@
                     }
                 },
                 created () {
-                    this.populateEmployeeList();
+                    if (this.isSysAdmin) {
+                        this.populateEmployeeList();
+                    } else {
+                        this.populateEmployeDropdown(1, this.currentUserId);
+                    }
                 },
                 mounted: function () {
                 },

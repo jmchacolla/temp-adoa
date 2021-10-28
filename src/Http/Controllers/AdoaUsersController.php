@@ -144,5 +144,18 @@ class AdoaUsersController extends Controller
             throw new Exception('Error function getEmployesByManagerId: ' . $exception->getMessage());
         }
     }
+
+    /**
+     * Get manager's employees by user ID
+     * @param String $userId
+     *
+     * @return array
+     */
+    public function getManagerEmployees(String $userId)
+    {
+        $manager = (new AdoaUsers)->getUserIdById($userId);
+        $employees = (new AdoaUsers)->getManagerEmployees($manager['meta']['position']);
+        return $employees;
+    }
 }
 
