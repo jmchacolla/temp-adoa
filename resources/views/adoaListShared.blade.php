@@ -52,10 +52,10 @@
                             @if (!empty($request->file_id) || !is_null($request->file_id))
                                 <tr>
                                     <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                    <td class="text-left">{{ $request->name }}</td>
+                                    <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
                                     <td class="text-left">@if (!empty($newData->EMPLOYEE_FIRST_NAME)) {{ $newData->EMPLOYEE_FIRST_NAME }} {{ $newData->EMPLOYEE_LAST_NAME }} @endif</td>
                                     <td class="text-left">
-                                        @if ($request->name == 'Remote Work - Terminate Agreement')
+                                        @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
                                             @php
                                                 $dataName = $newCustomProperties->data_name;
                                                 $nameFile = explode('_', $dataName);
@@ -113,6 +113,12 @@
 </script>
 <script type="text/javascript">
     $(document).ready( function () {
+        $('th').on("click", function (event) {
+            if($(event.target).is("input")){
+                event.stopImmediatePropagation();
+            }
+        });
+
         var table = $('#listShared').DataTable({
             "initComplete": function () {
                 count = 0;
