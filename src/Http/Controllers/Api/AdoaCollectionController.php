@@ -34,7 +34,6 @@ class AdoaCollectionController extends Controller
     {
         $collectionId = EnvironmentVariable::whereName('azp_lookup_collection_id')->first()->value;
         $requestData = $request->all();
-        // return $requestData;
 
         $records = DB::table('collection_' .  $collectionId)
         ->where('data->EMPLOYEE_ID', $requestData['employee_id'])
@@ -43,9 +42,6 @@ class AdoaCollectionController extends Controller
         ->where('data->DATE', '<=', $requestData['endDate'])
         ->whereIn('data->AZP_PROCESS', $requestData['documentSelected'])
 
-        //  pmql += '(data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected+ '") AND (data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected + '") ';
-        // pmql += 'AND (data.DATE>"' + initDate + '")';
-        // pmql += 'AND (data.DATE<"' + endDate + '")';
         ->select(
             'data->REQUEST_ID as REQUEST_ID',
             'data->EMPLOYEE_ID as EMPLOYEE_ID',

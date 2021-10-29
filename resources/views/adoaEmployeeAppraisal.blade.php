@@ -338,7 +338,7 @@
                                 app.adoaEin = value[0].ein;
                                 app.agencyName = value[0].agency_name;
 
-                                for (let index = level + 1 ; index < 6; index++) {
+                                for (let index = level + 1 ; index < 8; index++) {
                                     app.employeeLevel['level_' + index] = [];
                                     $('#adoaEmployeeLevel_' + index)
                                     .select2({
@@ -426,18 +426,6 @@
                     getAppraisalList() {
                         let initDate = this.initDate + ' 00:00:00';
                         let endDate  = this.endDate + ' 23:59:59';
-                        // let pmql = '';
-                        // pmql += '(data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected+ '") AND (data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected + '") ';
-                        // pmql += 'AND (data.DATE>"' + initDate + '")';
-                        // pmql += 'AND (data.DATE<"' + endDate + '")';
-                        // let appraisalSelected = '';
-                        // this.documentsSelected.forEach(function(appraisalType){
-                        //     appraisalSelected += 'data.AZP_PROCESS like "' + appraisalType + '" or ';
-
-                        // });
-                        // let lastIndex = appraisalSelected.lastIndexOf("or ");
-                        // appraisalSelected = appraisalSelected.substring(0, lastIndex);
-                        // let uri = decodeURI('/collections/' + this.collectionId + '/records?pmql=(' + pmql + ' AND (' + appraisalSelected + '))');
                         let azpData = {
                             'employee_id' : this.adoaEmployeeSelected,
                             'status' : 'COMPLETED',
@@ -446,11 +434,8 @@
                             'documentSelected' : this.documentsSelected
                         }
                         ProcessMaker.apiClient
-                        // .get(decodeURI(uri))
                         .post('adoa/azp-collection/azp-report', azpData)
                         .then(response => {
-                            console.log(response);
-                            // this.appraisalList = response.data.data;
                             this.appraisalList = response.data;
                             this.showList = true;
                             $('#appraisalList').DataTable().destroy();

@@ -144,8 +144,6 @@ class AdoaEmployeeAppraisalController extends Controller
             ]);
             $dataResponse = json_decode($response->getBody()->getContents(), true);
 
-            // return $dataResponse;
-
             $html = '';
 
             foreach ($dataResponse['data'] as $appraisal) {

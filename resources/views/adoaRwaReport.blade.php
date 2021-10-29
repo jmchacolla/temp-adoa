@@ -269,7 +269,7 @@
                                 app.adoaEin = value[0].ein;
                                 app.agencyName = value[0].agency_name;
 
-                                for (let index = level + 1 ; index < 6; index++) {
+                                for (let index = level + 1 ; index < 8; index++) {
                                     app.employeeLevel['level_' + index] = [];
                                     $('#adoaEmployeeLevel_' + index)
                                     .select2({
