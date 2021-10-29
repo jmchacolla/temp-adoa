@@ -205,4 +205,31 @@ class AdoaUsers extends Model
             return $response['error'] = 'There are errors in the Function: getAllEmployeesBySuperPositionAndAgengy ' . $exception->getMessage();
         }
     }
+
+    /**
+     * Get Manager's Employees by manager Position
+     * @param String $userId
+     *
+     * @return array
+     */
+    public function getManagerEmployees(String $position)
+    {
+        return static::select('id',  'title',
+            'firstname', 'lastname',
+            'email', 'username',
+            'status', 'meta->ein as ein',
+            'meta->position as position',
+            'meta->super_position as super_position',
+            'meta->agency as agency',
+            'meta->agency_name as agency_name'
+            )
+            ->where(function ($query) use ($position){
+                $query->where('meta->super_position', $position)
+                    ->orWhere('meta->indirect_super_position', $position);
+            })
+            ->where('status', 'ACTIVE')
+            ->orderBy('firstname', 'asc')
+            ->get()
+            ->toArray();
+    }
 }

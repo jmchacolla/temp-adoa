@@ -118,6 +118,7 @@ class AdoaEmployeeAppraisalController extends Controller
             $pmql .= 'AND (data.DATE>"' . $request->all()['initDate'] . ' 00:00:00")';
             $pmql .= 'AND (data.DATE<"' . $request->all()['endDate'] . ' 23:59:59")';
 
+
             $appraisalSelected = '';
             $type = $request->all()['type'];
             $arrayType = explode(',', $type);

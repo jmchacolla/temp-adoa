@@ -88,18 +88,33 @@
                 <p><h2>Print Performance Documentation </h2></p>
             </div>
 
-            <div class="form-group col-lg-8 col-md-8 col-sm-12 offset-lg-2 offset-md-2 " style="display: flex;align-items: right;">
-                <label for="adoaEmployee" style="width:50%;" class="label-color">
-                    Please select the employee name:
-                </label>
-                <select class="form-control" id="adoaEmployeeAdmin" style="width:50%;" v-model="adoaEmployeeSelected" v-if="isSysAdmin"></select>
-                <select class="form-control" id="adoaEmployee" style="width:50%;" v-model="adoaEmployeeSelected" v-if="!isSysAdmin"></select>
-                <div v-if="loading" style="display:inherit;">
-                    <button class="btn btn-default">
-                        <span class="spinner-border spinner-border-sm text-primary"></span>
-                    </button>
-                    <small class="text-secondary">We are loading your data, please be patient...</small>
+            <div class="col col-lg-8 col-md-8 col-sm-12 offset-lg-2 offset-md-2 " style="display: flex;align-items: right;">
+                <div class="col col-lg-5 col-md-5 col-sm-12">
+                    <label for="adoaEmployee" class="label-color">
+                        Please select the employee name:
+                    </label>
                 </div>
+
+                <div class="col col-lg-6 col-md-6 col-sm-12">
+                    <select class="form-control" id="adoaEmployeeAdmin"  v-model="adoaEmployeeSelected" v-if="isSysAdmin"></select>
+                    <p class="col col-12" v-show="!isSysAdmin"><select class="form-control" id="adoaEmployeeLevel_1" level="1" style="width:100%;" v-model="adoaEmployeeSelected" v-if="!isSysAdmin"></select></p>
+                    <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_2.length>1"><select class="form-control" id="adoaEmployeeLevel_2" level="2" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                    <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_3.length>1"><select class="form-control" id="adoaEmployeeLevel_3" level="3" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                    <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_4.length>1"><select class="form-control" id="adoaEmployeeLevel_4" level="4" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                    <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_5.length>1"><select class="form-control" id="adoaEmployeeLevel_5" level="5" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                    <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_6.length>1"><select class="form-control" id="adoaEmployeeLevel_6" level="5" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                    <p class="col col-12" v-show="!isSysAdmin && employeeLevel.level_7.length>1"><select class="form-control" id="adoaEmployeeLevel_7" level="5" style="width:100%;" v-model="adoaEmployeeSelected"></select></p>
+                </div>
+
+                <div class="col col-1">
+                    <div v-if="loading" style="display:inherit;overflow: visible;">
+                        <button class="btn btn-default">
+                            <span class="spinner-border spinner-border-sm text-primary"></span>
+                        </button>
+                        <small class="text-secondary">Loading...</small>
+                    </div>
+                </div>
+
             </div>
 
             <div class="col-lg-12 col-md-12 col-sm-12" style="margin:10px;">
@@ -220,8 +235,6 @@
             </div>
         </div>
 
-
-
     </div>
 
 
@@ -268,13 +281,80 @@
                         appraisalList : [],
                         showList : false,
                         currentUserId : {{ auth()->user()->id }},
+                        currentUser : {!! auth()->user() !!},
                         isManager: {{ empty($isManager) ? 'false' : $isManager }},
                         isSysAdmin: {{ empty($isSysAdmin) ? 'false' : $isSysAdmin }},
                         loading:false,
-                        collectionId: {{$collectionId}}
+                        collectionId: {{$collectionId}},
+                        employeeLevel : {
+                            "level_1":[],
+                            "level_2":[],
+                            "level_3":[],
+                            "level_4":[],
+                            "level_5":[],
+                            "level_6":[],
+                            "level_7":[]
+                        }
                     }
                 },
                 methods : {
+                    populateEmployeDropdown(level, employeeId){
+                        this.loading = true;
+                        ProcessMaker.apiClient
+                        .get(
+                            "/adoa/user/manager-employees/" + employeeId
+                        )
+                        .then(function(response) {
+                            let newData= [{ 'id' : '', 'text' : '- Select -'}];
+                            if(level == 1) {
+                                let userData =[{
+                                        'id' : app.currentUser.id,
+                                        'text' : app.currentUser.firstname + ' ' + app.currentUser.lastname,
+                                        'ein' : app.currentUser.meta.ein,
+                                        'agency_name' : app.currentUser.meta.agency_name
+                                    }];
+                                    newData = newData.concat(userData);
+                            }
+                            let data = $.map(response.data, function (obj) {
+                                obj.id = obj.id;
+                                obj.text = obj.firstname + ' ' + obj.lastname;
+                                return obj;
+                            });
+
+                            app.employeeLevel['level_' + level] = newData.concat(data);
+
+                            $('#adoaEmployeeLevel_' + level)
+                            .select2({
+                                placeholder: 'Select an option',
+                                data : app.employeeLevel['level_' + level]
+                            })
+                            .on('select2:select', function () {
+                                app.rwaList = [];
+                                app.showList = false;
+                                let value = $("#adoaEmployeeLevel_" + level).select2('data');
+
+                                app.adoaEmployeeSelected = value[0].id;
+                                app.adoaEmployeeName = value[0].text;
+                                app.adoaEin = value[0].ein;
+                                app.agencyName = value[0].agency_name;
+
+                                for (let index = level + 1 ; index < 8; index++) {
+                                    app.employeeLevel['level_' + index] = [];
+                                    $('#adoaEmployeeLevel_' + index)
+                                    .select2({
+                                        placeholder: 'Select an option',
+                                        data : []
+                                    });
+                                    $('#adoaEmployeeLevel_' + index).empty();
+                                }
+                                app.populateEmployeDropdown(parseInt(level) + 1, parseInt(app.adoaEmployeeSelected));
+                            });
+                            app.loading = false;
+                        })
+                        .catch(function(response) {
+                            app.loading = false;
+                        });
+                    },
                     populateEmployeeList(){
                         this.loading = true;
                         ProcessMaker.apiClient
@@ -282,40 +362,6 @@
                             "/adoa/employee-list/" + this.currentUserId
                         )
                         .then(function(response) {
-                            let newData= [{ 'id' : '', 'text' : '- Select -'}];
-                            newData = newData.concat(response.data);
-
-                            app.adoaEmployee = newData;
-
-                            $('#adoaEmployee')
-                            .select2({
-                                placeholder: 'Select an option',
-                                data : app.adoaEmployee
-                            })
-                            .on('select2:select', function () {
-                                app.appraisalList = [];
-                                app.showList = false;
-                                var value = $("#adoaEmployee").select2('data');
-                                app.adoaEmployeeSelected = value[0].id;
-
-                                if(self.adoaEmployeeSelected != '') {
-                                    ProcessMaker.apiClient
-                                    .get("/adoa/user/" + app.adoaEmployeeSelected)
-                                    .then(response => {
-                                        app.adoaEmployeeName = (response.data.firstname + ' ' + response.data.lastname).toUpperCase();
-                                        app.adoaEin          = response.data.meta.ein;
-                                        app.agencyName       = response.data.meta.agency_name;
-                                    })
-                                    .catch(response => {
-                                        console.log(response);
-                                    });
-                                } else {
-                                    app.adoaEmployeeName = '';
-                                    app.adoaEin          = '';
-                                    app.agencyName       = '';
-                                }
-                            });
-
                             $('#adoaEmployeeAdmin')
                             .select2({
                                 placeholder: 'Select an option',
@@ -380,22 +426,17 @@
                     getAppraisalList() {
                         let initDate = this.initDate + ' 00:00:00';
                         let endDate  = this.endDate + ' 23:59:59';
-                        let pmql = '';
-                        pmql += '(data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected+ '") AND (data.STATUS = "COMPLETED") AND (data.EMPLOYEE_ID = "' + this.adoaEmployeeSelected + '") ';
-                        pmql += 'AND (data.DATE>"' + initDate + '")';
-                        pmql += 'AND (data.DATE<"' + endDate + '")';
-                        let appraisalSelected = '';
-                        this.documentsSelected.forEach(function(appraisalType){
-                            appraisalSelected += 'data.AZP_PROCESS like "' + appraisalType + '" or ';
-
-                        });
-                        let lastIndex = appraisalSelected.lastIndexOf("or ");
-                        appraisalSelected = appraisalSelected.substring(0, lastIndex);
-                        let uri = decodeURI('/collections/' + this.collectionId + '/records?pmql=(' + pmql + ' AND (' + appraisalSelected + '))');
+                        let azpData = {
+                            'employee_id' : this.adoaEmployeeSelected,
+                            'status' : 'COMPLETED',
+                            'initDate' : initDate,
+                            'endDate' : endDate,
+                            'documentSelected' : this.documentsSelected
+                        }
                         ProcessMaker.apiClient
-                        .get(decodeURI(uri))
+                        .post('adoa/azp-collection/azp-report', azpData)
                         .then(response => {
-                            this.appraisalList = response.data.data;
+                            this.appraisalList = response.data;
                             this.showList = true;
                             $('#appraisalList').DataTable().destroy();
                         })
@@ -484,8 +525,11 @@
                     }
                 },
                 created () {
-                    this.populateEmployeeList();
-
+                    if (this.isSysAdmin) {
+                        this.populateEmployeeList();
+                    } else {
+                        this.populateEmployeDropdown(1, this.currentUserId);
+                    }
                 },
                 mounted: function () {
                 },
@@ -498,39 +542,39 @@
                                 "order": [[ 0, "desc" ]],
                                 "data" : app.appraisalList,
                                 "columns": [
-                                    { "title": "Request No.",  "data": "data.REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "From", "data": "data.EVALUATOR_FIRSTNAME", "defaultContent": "",
+                                    { "title": "Request No.",  "data": "REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
+                                    { "title": "From", "data": "EVALUATOR_FIRSTNAME", "defaultContent": "",
                                         "render" : function (data,type, row) {
-                                            if(typeof(row.data.EVALUATOR_LAST_NAME) === 'undefined' ||  row.data.EVALUATOR_LAST_NAME == null
-                                            || typeof(row.data.EVALUATOR_FIRST_NAME) === 'undefined' || row.data.EVALUATOR_FIRST_NAME == null) {
+                                            if(typeof(row.EVALUATOR_LAST_NAME) === 'undefined' ||  row.EVALUATOR_LAST_NAME == null
+                                            || typeof(row.EVALUATOR_FIRST_NAME) === 'undefined' || row.EVALUATOR_FIRST_NAME == null) {
                                                 return 'No registered';
                                             }
-                                            return row.data.EVALUATOR_LAST_NAME + " " +  row.data.EVALUATOR_FIRST_NAME;
+                                            return row.EVALUATOR_LAST_NAME + " " +  row.EVALUATOR_FIRST_NAME;
                                         }
                                     },
                                     { "title": "To", "data": "fullname", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            if(typeof(row.data.EMPLOYEE_LAST_NAME) === 'undefined' || row.data.EMPLOYEE_LAST_NAME == null
-                                            || typeof(row.data.EMPLOYEE_FIRST_NAME) === 'undefined' || row.data.EMPLOYEE_FIRST_NAME == null) {
+                                            if(typeof(row.EMPLOYEE_LAST_NAME) === 'undefined' || row.EMPLOYEE_LAST_NAME == null
+                                            || typeof(row.EMPLOYEE_FIRST_NAME) === 'undefined' || row.EMPLOYEE_FIRST_NAME == null) {
                                                 return 'No registered';
                                             }
-                                            return row.data.EMPLOYEE_LAST_NAME + " " +  row.data.EMPLOYEE_FIRST_NAME
+                                            return row.EMPLOYEE_LAST_NAME + " " +  row.EMPLOYEE_FIRST_NAME
                                         }
                                     },
-                                    { "title": "EIN", "data": "DATA.EMPLOYEE_EIN", "defaultContent": "", "sortable": false},
+                                    { "title": "EIN", "data": "EMPLOYEE_EIN", "defaultContent": "", "sortable": false},
                                     { "title": "Type", "data": "type", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            return app.getAppraisalType(row.data.AZP_PROCESS);
+                                            return app.getAppraisalType(row.AZP_PROCESS);
                                         }
                                     },
                                     { "title": "Comments", "data": "content", "defaultContent": "",
                                         "render": function (data, type, row, meta) {
-                                            return app.getAppraisalContent(row.data.AZP_PROCESS, row.data.CONTENT)
+                                            return app.getAppraisalContent(row.AZP_PROCESS, row.CONTENT)
                                         }
                                     },
                                     { "title": "Date", "data": "date", "defaultContent": "",
                                         "render": function (data, type, row) {
-                                            let dateFormat = new Date(row.data.DATE);
+                                            let dateFormat = new Date(row.DATE);
 
                                             var dd   = String(dateFormat.getDate()).padStart(2, '0');
                                             var mm   = String(dateFormat.getMonth() + 1).padStart(2, '0');
@@ -538,16 +582,15 @@
 
                                             let date = mm + '-' + dd + '-' + yyyy;
                                             return date;
-
                                         }
                                     },
                                     {
                                         "title": "Actions", "data" : "", "sortable": false, "defaultContent": "",
                                         "render": function (data, type,row) {
                                             let html = '';
-                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
-                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.data.REQUEST_ID + ', ' + row.data.FILE_ID + ');"></i></a>&nbsp;';
-                                            html += '<a href="/request/' + row.data.REQUEST_ID + '/files/' + row.data.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';
+                                            html += '<a href="/request/' + row.REQUEST_ID + '/files/' + row.FILE_ID + '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
 
                                             return html;
                                         }
