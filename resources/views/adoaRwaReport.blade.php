@@ -242,7 +242,8 @@
                                         'id' : app.currentUser.id,
                                         'text' : app.currentUser.firstname + ' ' + app.currentUser.lastname,
                                         'ein' : app.currentUser.meta.ein,
-                                        'agency_name' : app.currentUser.meta.agency_name
+                                        'agency_name' : app.currentUser.meta.agency_name,
+                                        'manager' : app.currentUser.meta.manager
                                     }];
                                     newData = newData.concat(userData);
                             }
@@ -254,10 +255,20 @@
 
                             app.employeeLevel['level_' + level] = newData.concat(data);
 
+                            function addIcon(option) {
+                                if (option.manager == 'Y') {
+                                    return $('<span><i class="fa fa-user"> </i> ' + option.text + '</span>');
+                                }
+                                else {
+                                    return $('<span>' + option.text + '</span>');
+                                }
+                            }
+
                             $('#adoaEmployeeLevel_' + level)
                             .select2({
                                 placeholder: 'Select an option',
-                                data : app.employeeLevel['level_' + level]
+                                data : app.employeeLevel['level_' + level],
+                                templateResult: addIcon
                             })
                             .on('select2:select', function () {
                                 app.rwaList = [];
