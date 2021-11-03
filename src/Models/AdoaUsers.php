@@ -221,7 +221,8 @@ class AdoaUsers extends Model
             'meta->position as position',
             'meta->super_position as super_position',
             'meta->agency as agency',
-            'meta->agency_name as agency_name'
+            'meta->agency_name as agency_name',
+            'meta->manager as manager'
             )
             ->where(function ($query) use ($position){
                 $query->where('meta->super_position', $position)
