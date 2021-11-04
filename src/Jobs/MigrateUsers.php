@@ -117,33 +117,64 @@ class MigrateUsers implements ShouldQueue
     private function saveUserInformation($import)
     {
         $user = $this->newOrExistingUser($import);
+        $id = array_search($import['EMPLOYEE'], $this->users);
 
-        $user->fill([
-            'email' => $this->generateEmail($import),
-            'firstname' => trim($import['FIRST_NAME']),
-            'lastname' => trim($import['LAST_NAME']),
-            'username' => trim($import['EMPLOYEE']),
-            'password' => $this->password,
-            'address' => trim($import['ADDRESS']),
-            'phone' => trim($import['WORK_PHONE']),
-            'is_administrator' => false,
-            'status' => 'ACTIVE',
-            'meta' => [
-                'ein' => trim($import['EMPLOYEE']),
-                'email' => trim($import['WORK_EMAIL']),
-                'position' => trim($import['POSITION']),
-                'manager' => trim($import['MANAGER']),
-                'super_position' => trim($import['SUPER_POSITION']),
-                'title' => trim($import['TITLE']),
-                'agency' => trim($import['AGENCY']),
-                'agency_name' => trim($import['AGENCY_NAME']),
-                'process_level' => trim($import['PROCESS_LEVEL']),
-                'department' => trim($import['DEPARTMENT']),
-                'term_date' => trim($import['TERM_DATE']),
-                'flsa_status' => trim($import['FLSA_STATUS']),
-                'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-            ],
-        ]);
+        if ($id !== false) {
+            $user->fill([
+                'email' => $this->generateEmail($import),
+                'firstname' => trim($import['FIRST_NAME']),
+                'lastname' => trim($import['LAST_NAME']),
+                'username' => trim($import['EMPLOYEE']),
+                //'password' => $this->password,
+                'address' => trim($import['ADDRESS']),
+                'phone' => trim($import['WORK_PHONE']),
+                'is_administrator' => false,
+                'status' => 'ACTIVE',
+                'meta' => [
+                    'ein' => trim($import['EMPLOYEE']),
+                    'email' => trim($import['WORK_EMAIL']),
+                    'position' => trim($import['POSITION']),
+                    'manager' => trim($import['MANAGER']),
+                    'super_position' => trim($import['SUPER_POSITION']),
+                    'title' => trim($import['TITLE']),
+                    'agency' => trim($import['AGENCY']),
+                    'agency_name' => trim($import['AGENCY_NAME']),
+                    'process_level' => trim($import['PROCESS_LEVEL']),
+                    'department' => trim($import['DEPARTMENT']),
+                    'term_date' => trim($import['TERM_DATE']),
+                    'flsa_status' => trim($import['FLSA_STATUS']),
+                    'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
+                ],
+            ]);
+        } else {
+            $user->fill([
+                'email' => $this->generateEmail($import),
+                'firstname' => trim($import['FIRST_NAME']),
+                'lastname' => trim($import['LAST_NAME']),
+                'username' => trim($import['EMPLOYEE']),
+                //'password' => $this->password,
+                'address' => trim($import['ADDRESS']),
+                'phone' => trim($import['WORK_PHONE']),
+                'is_administrator' => false,
+                'status' => 'ACTIVE',
+                'timezone' => 'America/Phoenix',
+                'meta' => [
+                    'ein' => trim($import['EMPLOYEE']),
+                    'email' => trim($import['WORK_EMAIL']),
+                    'position' => trim($import['POSITION']),
+                    'manager' => trim($import['MANAGER']),
+                    'super_position' => trim($import['SUPER_POSITION']),
+                    'title' => trim($import['TITLE']),
+                    'agency' => trim($import['AGENCY']),
+                    'agency_name' => trim($import['AGENCY_NAME']),
+                    'process_level' => trim($import['PROCESS_LEVEL']),
+                    'department' => trim($import['DEPARTMENT']),
+                    'term_date' => trim($import['TERM_DATE']),
+                    'flsa_status' => trim($import['FLSA_STATUS']),
+                    'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
+                ],
+            ]);
+        }
 
         try {
             $user->save();

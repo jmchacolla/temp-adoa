@@ -99,6 +99,7 @@ class MigrateAdministrators
                             'password'=> $password,
                             'is_administrator'=> true,
                             'status'=> 'ACTIVE',
+                            'timezone' => 'America/Phoenix',
                             'meta' => $metaInformationData,
                             'created_at'=> date('Y-m-d H:i:s'),
                         );
