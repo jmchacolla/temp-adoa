@@ -5,7 +5,10 @@ use ProcessMaker\Http\Controllers\Controller;
 use ProcessMaker\Http\Resources\ApiCollection;
 use ProcessMaker\Package\Adoa\Models\Sample;
 use ProcessMaker\Models\ProcessRequest;
+use ProcessMaker\Models\ProcessRequestToken;
 use ProcessMaker\Models\EnvironmentVariable;
+use ProcessMaker\Events\ActivityAssigned;
+use ProcessMaker\Http\Resources\Task as Resource;
 use Spatie\MediaLibrary\Models\Media;
 use RBAC;
 use Illuminate\Http\Request;
@@ -171,11 +174,16 @@ class AdoaController extends Controller
             }
 
             //Query to get requests for agency admin
-            $adoaListRequestsAgency = DB::table('process_requests')
-                ->leftJoin('media', 'process_requests.id', '=', 'media.model_id')
-                ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
-                ->join('processes', 'process_requests.process_id', '=', 'processes.id')
-                ->select('process_requests.id as request_id',
+            $adoaListRequestsAgency = DB::table('process_request_tokens')
+                ->leftJoin('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
+                ->leftJoin('media', 'process_request_tokens.process_request_id', '=', 'media.model_id')
+                ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
+                ->join('processes', 'process_request_tokens.process_id', '=', 'processes.id')
+                ->select('process_request_tokens.id AS task_id',
+                    'process_request_tokens.element_name',
+                    'process_request_tokens.element_type',
+                    'process_request_tokens.process_request_id as request_id',
+                    'process_request_tokens.status as task_status',
                     'process_requests.process_id',
                     'process_requests.name',
                     'process_requests.status as request_status',
@@ -185,11 +193,18 @@ class AdoaController extends Controller
                     'media.id AS file_id',
                     'media.custom_properties',
                     'users.firstname',
-                    'users.lastname')
-                ->where('process_requests.callable_id', 'ProcessId')
+                    'users.lastname',
+                    'process_request_tokens.user_id as user_id')
+                ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
                 ->where('processes.status', 'ACTIVE')
                 ->whereNotIn('processes.process_category_id', [1, 2])
-                ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED']);
+                ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
+                ->whereIn('process_request_tokens.id', function($query) {
+                    $query->selectRaw('max(id)')
+                        ->from('process_request_tokens')
+                        ->groupBy('process_request_id')
+                        ->groupBy('element_name');
+                });
 
             if ($flagAgency == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
@@ -328,14 +343,15 @@ class AdoaController extends Controller
             ->get();
     }
 
-    public function getTaskAgency($request_id) {
+    public function getTaskAgency($task_id) {
         return DB::table('process_request_tokens')
             ->join('users', 'process_request_tokens.user_id', '=', 'users.id')
             ->select('process_request_tokens.id',
+                'process_request_tokens.element_name',
                 'users.firstname',
                 'users.lastname')
             ->where('process_request_tokens.status', 'ACTIVE')
-            ->where('process_request_tokens.process_request_id', $request_id)
+            ->where('process_request_tokens.id', $task_id)
             ->get();
     }
 
@@ -393,9 +409,19 @@ class AdoaController extends Controller
             $flagLevel = 1;
         }
 
+        $currentUser = DB::table('users')
+            ->select('id', 'firstname', 'lastname', 'username', 'meta->agency as agency', 'meta->ein as ein')
+            ->where('status', 'ACTIVE')
+            ->where('id', Auth::user()->id)
+            ->when($searchTerm, function ($query, $searchTerm) {
+                return $query->where(DB::raw('CONCAT_WS(" ", firstname, lastname, username)'), 'like', '%' . $searchTerm . '%');
+            });
+
         $usersByAgency = DB::table('users')
-            ->select('id', 'firstname', 'lastname', 'username', 'meta->agency as agency')
-            ->where('status', 'ACTIVE');
+            ->select('id', 'firstname', 'lastname', 'username', 'meta->agency as agency', 'meta->ein as ein')
+            ->where('status', 'ACTIVE')
+            ->where('meta->position', '!=', '')
+            ->union($currentUser);
 
         if ($flagAgency == 1) {
             $usersByAgency = $usersByAgency
@@ -415,5 +441,46 @@ class AdoaController extends Controller
             ->get();
 
         return $usersByAgency;
+    }
+
+    public function updateTaskRequest(Request $request, ProcessRequestToken $task)
+    {
+        //$this->authorize('update', $task);
+        if ($request->input('status') === 'COMPLETED') {
+            if ($task->status === 'CLOSED') {
+                return abort(422, __('Task already closed'));
+            }
+            // Skip ConvertEmptyStringsToNull and TrimStrings middlewares
+            $data = json_decode($request->getContent(), true);
+            $data = SanitizeHelper::sanitizeData($data['data'], $task->getScreen());
+            //Call the manager to trigger the start event
+            $process = $task->process;
+            $instance = $task->processRequest;
+            WorkflowManager::completeTask($process, $instance, $task, $data);
+            return new Resource($task->refresh());
+        } elseif (!empty($request->input('user_id'))) {
+            $userToAssign = $request->input('user_id');
+            if ($task->is_self_service && $userToAssign == Auth::id() && !$task->user_id) {
+                // Claim task
+                $task->is_self_service = 0;
+                $task->user_id = $userToAssign;
+                $task->persistUserData($userToAssign);
+            } else {
+                // Validate if user can reassign
+                //$task->authorizeReassignment(Auth::user());
+                // Reassign user
+                $task->user_id = $userToAssign;
+                $task->persistUserData($userToAssign);
+            }
+            $task->save();
+
+            // Send a notification to the user
+            //$notification = new TaskReassignmentNotification($task);
+            //$task->user->notify($notification);
+            event(new ActivityAssigned($task));
+            return new Resource($task->refresh());
+        } else {
+            return abort(422);
+        }
     }
 }

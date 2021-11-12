@@ -17,12 +17,14 @@
             <thead class="table-primary">
                 <tr>
                     <th scope="col" class="apply-filter" width="5%">#</th>
-                    <th scope="col" class="apply-filter" width="15%">Process</th>
-                    <th scope="col" class="apply-filter" width="20%">Employee Name</th>
+                    <th scope="col" class="apply-filter" width="10%">Process</th>
+                    <th scope="col" class="apply-filter" width="10%">Employee Name</th>
                     <th scope="col" class="apply-filter" width="10%">EIN</th>
-                    <th scope="col" class="apply-filter" width="15%">Started</th>
-                    <th scope="col" class="apply-filter" width="15%">Completed</th>
-                    <th scope="col" class="apply-filter" width="10%">Status</th>
+                    <th scope="col" class="apply-filter" width="10%">Started</th>
+                    <th scope="col" class="apply-filter" width="10%">Completed</th>
+                    <th scope="col" class="apply-filter" width="15%">Current Task</th>
+                    <th scope="col" class="apply-filter" width="13%">Current User</th>
+                    <th scope="col" class="apply-filter" width="7%">Status</th>
                     <th scope="col" class="text-center" width="10%"><strong>Options</strong></th>
                 </tr>
             </thead>
@@ -54,85 +56,91 @@
                                     $newCustomProperties = json_decode($customProperties);
                                 }
                             @endphp
-                            @if (!empty($request->file_id) || !is_null($request->file_id))
-                                @if (is_null($newCustomProperties->createdBy))
-                                    <tr>
-                                        <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                        <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
-                                        <td class="text-left">
-                                            @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
-                                                @php
-                                                    $dataName = $newCustomProperties->data_name;
-                                                    $nameFile = explode('_', $dataName);
-                                                @endphp
-                                                @if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile))
-                                                    {{ $nameFile[3] }} {{ $nameFile[4] }}
+                            @if (($request->element_type == 'task' && $request->task_status == 'ACTIVE') || ($request->element_type == 'end_event' && $request->task_status == 'CLOSED' && $request->element_name == 'Completed' && $request->request_status == 'COMPLETED'))
+                                @if (!empty($request->file_id) || !is_null($request->file_id))
+                                    @if (is_null($newCustomProperties->createdBy))
+                                        <tr>
+                                            <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
+                                            <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
+                                            <td class="text-left">
+                                                @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
+                                                    @php
+                                                        $dataName = $newCustomProperties->data_name;
+                                                        $nameFile = explode('_', $dataName);
+                                                    @endphp
+                                                    @if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile))
+                                                        {{ $nameFile[3] }} {{ $nameFile[4] }}
+                                                    @endif
+                                                @else
+                                                    @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
+                                                        {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
+                                                    @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
+                                                        {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                                    @endif
                                                 @endif
-                                            @else
-                                                @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                    {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                                @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                    {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                            </td>
+                                            <td class="text-left">
+                                                @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
+                                                    @if (array_key_exists(5, $nameFile))
+                                                        {{ $nameFile[5] }}
+                                                    @endif
+                                                @else
+                                                    @if (!empty($newData->EMA_EMPLOYEE_EIN))
+                                                        {{ $newData->EMA_EMPLOYEE_EIN }}
+                                                    @elseif (!empty($newData->CON_EMPLOYEE_EIN))
+                                                        {{ $newData->CON_EMPLOYEE_EIN }}
+                                                    @endif
                                                 @endif
-                                            @endif
-                                        </td>
-                                        <td class="text-left">
-                                            @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
-                                                @if (array_key_exists(5, $nameFile))
-                                                    {{ $nameFile[5] }}
-                                                @endif
-                                            @else
-                                                @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                    {{ $newData->EMA_EMPLOYEE_EIN }}
-                                                @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                    {{ $newData->CON_EMPLOYEE_EIN }}
-                                                @endif
-                                            @endif
-                                        </td>
-                                        <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                        <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                        <td class="text-left">{{ $request->request_status }}</td>
-                                        <td class="text-right">
-                                            <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                            <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                            <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
-                                        </td>
-                                    </tr>
-                                @endif
-                            @else
-                                @if((empty($newData->EMA_EMPLOYEE_EIN) && empty($newData->CON_EMPLOYEE_EIN)) && $request->request_status == 'COMPLETED')
+                                            </td>
+                                            <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
+                                            <td class="text-left">{{ $newCompletedDateFormat }}</td>
+                                            <td class="text-left">{{ $request->element_name }}</td>
+                                            <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
+                                            <td class="text-left">{{ $request->request_status }}</td>
+                                            <td class="text-right">
+                                                <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                                <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                                <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @else
-                                    <tr>
-                                        <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                        <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
-                                        <td class="text-left">
-                                            @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
-                                                @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                    {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                                @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                    {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                    @if((empty($newData->EMA_EMPLOYEE_EIN) && empty($newData->CON_EMPLOYEE_EIN)) && $request->request_status == 'COMPLETED')
+                                    @else
+                                        <tr>
+                                            <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
+                                            <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
+                                            <td class="text-left">
+                                                @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
+                                                    @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
+                                                        {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
+                                                    @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
+                                                        {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                                    @endif
                                                 @endif
-                                            @endif
-                                        </td>
-                                        <td class="text-left">
-                                            @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
-                                                @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                    {{ $newData->EMA_EMPLOYEE_EIN }}
-                                                @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                    {{ $newData->CON_EMPLOYEE_EIN }}
+                                            </td>
+                                            <td class="text-left">
+                                                @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
+                                                    @if (!empty($newData->EMA_EMPLOYEE_EIN))
+                                                        {{ $newData->EMA_EMPLOYEE_EIN }}
+                                                    @elseif (!empty($newData->CON_EMPLOYEE_EIN))
+                                                        {{ $newData->CON_EMPLOYEE_EIN }}
+                                                    @endif
                                                 @endif
-                                            @endif
-                                        </td>
-                                        <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                        <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                        <td class="text-left">{{ $request->request_status }}</td>
-                                        <td class="text-right">
-                                            @if ($request->request_status != 'COMPLETED')
-                                                <a href="#"><i class="fas fa-people-arrows" style="color: #71A2D4;" title="Reassign Request" onclick="reassign({{ $request->request_id }});"></i></a>&nbsp;
-                                            @endif
-                                            <a href="/requests/{{ $request->request_id }}"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
+                                            <td class="text-left">{{ $newCompletedDateFormat }}</td>
+                                            <td class="text-left">{{ $request->element_name }}</td>
+                                            <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
+                                            <td class="text-left">{{ $request->request_status }}</td>
+                                            <td class="text-right">
+                                                @if ($request->request_status != 'COMPLETED')
+                                                    <a href="#"><i class="fas fa-people-arrows" style="color: #71A2D4;" title="Reassign Request" onclick="reassign({{ $request->request_id }}, {{ $request->task_id }});"></i></a>&nbsp;
+                                                @endif
+                                                <a href="/requests/{{ $request->request_id }}"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @endif
                             @endif
                         @endif
@@ -168,12 +176,14 @@
                         The <strong>Reassign to:</strong> field is required.
                     </div>
                     <div class="form-group">
+                        <strong>Current Task: </strong><br><span id="spanCurrentTask"></span>
+                    </div>
+                    <div class="form-group">
                         <strong>Current User: </strong><br><span id="spanCurrentUser"></span>
                     </div>
                     <div class="form-group">
                         <label for="selectUserId"><strong>Reassign to:</strong></label>
                         <select class="select2 form-control" id="selectUserId" required>
-
                         </select>
                     </div>
                     <div style="display: none;" id="divTaskId">
@@ -221,7 +231,11 @@
                 processResults: function (response) {
                     let list = $.map(response, function (obj) {
                         obj.id   = obj.id;
-                        obj.text = obj.firstname + ' ' + obj.lastname  + ' - '  + obj.agency + ' - ' + obj.username;
+                        if (obj.agency == 'ALL') {
+                            obj.text = obj.firstname + ' ' + obj.lastname  + ' - '  + obj.ein + ' - ' + obj.username;
+                        } else {
+                            obj.text = obj.firstname + ' ' + obj.lastname  + ' - '  + obj.agency + ' - ' + obj.username;
+                        }
                         return obj;
                        });
                     return {
@@ -242,7 +256,7 @@
             "initComplete": function () {
                 count = 0;
                 this.api().columns().every( function () {
-                    if(this.index() != 0 && this.index() != 7) {
+                    if(this.index() != 0 && this.index() != 9) {
                         var title = this.header();
                         //replace spaces with dashes
                         title = $(title).html().replace(/[\W]/g, '-');
@@ -291,14 +305,30 @@
             "pageLength": 25
         });
 
-        window.reassign = function(request) {
-            ProcessMaker.apiClient.get('adoa/get-task-agency/' + request).then(responseTask => {
-                $('#reassignTitle').html('Reassign request # <strong id="strongRequestId">' + request + '</strong>');
-                $('#spanCurrentUser').html('');
-                $('#spanCurrentUser').html(responseTask.data[0].firstname + ' ' + responseTask.data[0].lastname);
-                $('#divTaskId').html('');
-                $('#divTaskId').html(responseTask.data[0].id);
-                $('#showReassing').modal('show');
+        window.reassign = function(request, task) {
+            ProcessMaker.apiClient.get('adoa/get-task-agency/' + task).then(responseTask => {
+                if (responseTask.data.length > 0) {
+                    $('#reassignTitle').html('Reassign request # <strong id="strongRequestId">' + request + '</strong>');
+                    $('#spanCurrentTask').html('');
+                    $('#spanCurrentTask').html(responseTask.data[0].element_name);
+                    $('#spanCurrentUser').html('');
+                    $('#spanCurrentUser').html(responseTask.data[0].firstname + ' ' + responseTask.data[0].lastname);
+                    $('#divTaskId').html('');
+                    $('#divTaskId').html(responseTask.data[0].id);
+                    $('#showReassing').modal('show');
+                    $('#showReassing .form-group').eq(1).show()
+                    $('#buttonReassign').show();
+                } else {
+                    $('#reassignTitle').html('Reassign request # <strong id="strongRequestId">' + request + '</strong>');
+                    $('#spanCurrentTask').html('');
+                    $('#spanCurrentTask').html('The request does not have a valid task.');
+                    $('#spanCurrentUser').html('');
+                    $('#spanCurrentUser').html('The request does not have a valid user.');
+                    $('#divTaskId').html('');
+                    $('#showReassing').modal('show');
+                    $('#showReassing .form-group').eq(1).hide()
+                    $('#buttonReassign').hide();
+                }
             });
         }
 
@@ -307,7 +337,7 @@
                 $('#divMessageError').css("display", "");
             } else {
                 ProcessMaker.confirmModal('Confirm', '<div class="text-left">Are you sure that you want to reassign the request # ' + $('#strongRequestId').text() + ' from ' + $('#spanCurrentUser').text() + ' to ' + $('#selectUserId option:selected').text() + '?</div>', '', () => {
-                    ProcessMaker.apiClient.put('tasks/' + $('#divTaskId').text(), {user_id: $('#selectUserId').val()});
+                    ProcessMaker.apiClient.put('adoa/update-task/' + $('#divTaskId').text(), {user_id: $('#selectUserId').val()});
                     ProcessMaker.alert('The request was reassigned successfully! Your browser will be reloaded!', 'success');
                     $('#showReassing').modal('hide');
                     setTimeout(function(){

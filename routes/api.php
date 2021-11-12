@@ -34,4 +34,5 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     // Get collections records
     Route::post('adoa/rwa-collection/rwa-report', 'Api\AdoaCollectionController@getRwaReportByUser');
     Route::post('adoa/azp-collection/azp-report', 'Api\AdoaCollectionController@getAzpReportByUser');
+    Route::put('adoa/update-task/{task}', 'AdoaController@updateTaskRequest');
 });
