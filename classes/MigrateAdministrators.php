@@ -43,34 +43,35 @@ class MigrateAdministrators
                             'agency' => $administrator[1],
                             'employee_process_level' => $administrator[2],
                             'pm_process_id' => $administrator[3],
-                            'update_date' => $administrator[4],
+                            'update_date' => $administrator[4]
                         );
 
                         $metaUpdateInformationData = json_encode($metaUpdateInformationData);
-
 
                         $updateUserData = array (
                             'id' => $localUsersList[$administrator[0]],
                             'email' => $UserEmail,
                             'firstname'=> $administrator[6],
                             'lastname'=> $administrator[7],
-                            'is_administrator'=> true,
+                            'is_administrator'=> false,
                             'status'=> 'ACTIVE',
                             'meta' => $metaUpdateInformationData,
-                            'updated_at'=> date('Y-m-d H:i:s'),
+                            'updated_at'=> date('Y-m-d H:i:s')
                         );
 
                         $updated = $adoaUsers->updateUser($updateUserData);
+
                         if ($updated == 1) {
                             $groupMember = array(
                                 'group_id' => $groupId,
                                 'member_type' => 'ProcessMaker\Models\User',
-                                'member_id' => $localUsersList[$administrator[1]],
+                                'member_id' => $localUsersList[$administrator[0]],
                                 'created_at' => date('Y-m-d H:i:s')
                             );
 
                             $updatedUsers = $updatedUsers + 1;
                         }
+
                     } elseif (empty($localUsersList[$administrator[0]])) {
 
                         $UserEmail = $administrator[0] . '@hris.az.gov';
@@ -86,7 +87,7 @@ class MigrateAdministrators
                             'agency' => $administrator[1],
                             'employee_process_level' => $administrator[2],
                             'pm_process_id' => $administrator[3],
-                            'update_date' => $administrator[4],
+                            'update_date' => $administrator[4]
                         );
                         $metaInformationData = json_encode($metaInformationData);
 
@@ -97,11 +98,11 @@ class MigrateAdministrators
                             'lastname'=> $administrator[7],
                             'username'=> $administrator[0],
                             'password'=> $password,
-                            'is_administrator'=> true,
+                            'is_administrator'=> false,
                             'status'=> 'ACTIVE',
                             'timezone' => 'America/Phoenix',
                             'meta' => $metaInformationData,
-                            'created_at'=> date('Y-m-d H:i:s'),
+                            'created_at'=> date('Y-m-d H:i:s')
                         );
 
                         $userUid = $adoaUsers->insertUser($newUserData);

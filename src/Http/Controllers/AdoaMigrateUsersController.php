@@ -27,12 +27,11 @@ class AdoaMigrateUsersController extends Controller
     {
         $groupId = config('adoa.agency_admin_group_id');
         require_once dirname(__DIR__, 3) . '/classes/MigrateAdministrators.php';
-        //ini_set('memory_limit', '-1');
-        //ini_set('set_time_limit', 0);
-        //ini_set('max_execution_time', 0);
-        //$tiempo = microtime(true);
+        ini_set('memory_limit', '-1');
+        ini_set('set_time_limit', 0);
+        ini_set('max_execution_time', 0);
+        $tiempo = microtime(true);
         $migrateUsers = new MigrateAdministrators();
         return $migrateUsers->migrateAdminInformation($groupId);
-        //return $result;
     }
 }
