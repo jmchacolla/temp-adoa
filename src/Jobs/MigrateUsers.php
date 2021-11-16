@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Log;
 use ProcessMaker\Jobs\ThrowSignalEvent;
 use ProcessMaker\Models\User;
+use ProcessMaker\Models\EnvironmentVariable;
 use Throwable;
 
 class MigrateUsers implements ShouldQueue
@@ -79,7 +80,7 @@ class MigrateUsers implements ShouldQueue
             ->whereNotIn('id', function($query) {
                 $query->selectRaw('member_id')
                     ->from('group_members')
-                    ->where('group_id', 8);
+                    ->where('group_id', EnvironmentVariable::whereName('group_fixme_id')->first()->value);
             })
             ->update(['status' => 'INACTIVE']);
     }
