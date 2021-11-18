@@ -554,7 +554,7 @@
                                 "data" : app.appraisalList,
                                 "columns": [
                                     { "title": "Request No.",  "data": "REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "From", "data": "EVALUATOR_FIRSTNAME", "defaultContent": "",
+                                    { "title": "From", "data": "EVALUATOR_FIRST_NAME", "defaultContent": "",
                                         "render" : function (data,type, row) {
                                             if(typeof(row.EVALUATOR_LAST_NAME) === 'undefined' ||  row.EVALUATOR_LAST_NAME == null
                                             || typeof(row.EVALUATOR_FIRST_NAME) === 'undefined' || row.EVALUATOR_FIRST_NAME == null) {
