@@ -145,7 +145,7 @@ class MigrateUsers implements ShouldQueue
                     'term_date' => trim($import['TERM_DATE']),
                     'flsa_status' => trim($import['FLSA_STATUS']),
                     'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-                ],
+                ]
             ]);
         } else {
             $user->fill([
@@ -154,6 +154,7 @@ class MigrateUsers implements ShouldQueue
                 'lastname' => trim($import['LAST_NAME']),
                 'username' => trim($import['EMPLOYEE']),
                 'password' => $this->password,
+                //'password' => 'p^@)YUvVB"j4.J*F',
                 'address' => trim($import['ADDRESS']),
                 'phone' => trim($import['WORK_PHONE']),
                 'is_administrator' => false,
@@ -173,7 +174,7 @@ class MigrateUsers implements ShouldQueue
                     'term_date' => trim($import['TERM_DATE']),
                     'flsa_status' => trim($import['FLSA_STATUS']),
                     'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-                ],
+                ]
             ]);
         }
 

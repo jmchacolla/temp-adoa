@@ -17,5 +17,5 @@ Route::group(['middleware' => ['auth']], function () {
     ////--- RWA
     // https://pm4-3315.processmaker.net/adoa/rwa-report
     Route::get('adoa/rwa-report', 'AdoaRwaReportController@index')->name('package.adoa.tab.rwa-report');
-
+    Route::get('adoa/agency-dashboard/{groupId}', 'AdoaController@getListRequestsAgencyDashboard');
 });

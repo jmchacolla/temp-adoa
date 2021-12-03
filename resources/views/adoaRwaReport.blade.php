@@ -412,6 +412,11 @@
                                             }
                                         }
                                     },
+                                    { "title": "Valid", "data": "ADOA_RWA_REMOTE_AGREEMENT_VALID", "defaultContent": "", "class": "text-center",
+                                        "render":function (data, type, row) {
+                                            return (row.ADOA_RWA_REMOTE_AGREEMENT_VALID == "Y") ? "Yes" : "No";
+                                        }
+                                    },
                                     { "title": "From", "data": "ADOA_RWA_REMOTE_AGREEMENT_START_DATE", "defaultContent": "", "class": "text-center"},
                                     { "title": "To", "data": "ADOA_RWA_REMOTE_AGREEMENT_END_DATE", "defaultContent": "", "class": "text-center"},
                                     {
