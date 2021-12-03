@@ -56,7 +56,7 @@ window.printPdf = function(request, file) {
 }
 
 window.viewPdf = function(request, file) {
-    $('.modal-body').html('');
-    $('.modal-body').html('<embed src="/adoa/view/' + request + '/' + file + '" frameborder="0" width="100%" height="800px">');
+    $('#showPdf .modal-body').html('');
+    $('#showPdf .modal-body').html('<embed src="/adoa/view/' + request + '/' + file + '" frameborder="0" width="100%" height="800px">');
     $('#showPdf').modal('show');
 }

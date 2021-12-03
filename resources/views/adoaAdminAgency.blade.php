@@ -9,6 +9,43 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css">
 @endsection
+<style media="screen">
+    .lds-ring {
+        display: inline-block;
+        position: relative;
+        width: 70px;
+        height: 70px;
+    }
+    .lds-ring div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        margin: 5px;
+        border: 5px solid #fff;
+        border-radius: 50%;
+        animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #A9A9A9 transparent transparent transparent;
+    }
+    .lds-ring div:nth-child(1) {
+        animation-delay: -0.45s;
+    }
+    .lds-ring div:nth-child(2) {
+        animation-delay: -0.3s;
+    }
+    .lds-ring div:nth-child(3) {
+        animation-delay: -0.15s;
+    }
+    @keyframes lds-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 @section('content')
 <div class="col-sm-12">
     <h3>Agency {{ $agencyName }}</h3>
@@ -28,125 +65,6 @@
                     <th scope="col" class="text-center" width="10%"><strong>Options</strong></th>
                 </tr>
             </thead>
-            <tbody>
-                @php
-                    $count = count($adoaListRequestsAgency);
-                @endphp
-                @if ($count > 0)
-                    @foreach ($adoaListRequestsAgency as $request)
-                        @if ($request->name != 'Email Notification Sub Process')
-                            @php
-                                $createdDate = $request->created_at;
-                                $newCreatedDate = new DateTime($createdDate);
-                                //$newCreatedDate->setTimezone(new DateTimeZone(Auth::user()->timezone));
-                                $newCreatedDate->setTimezone(new DateTimeZone('America/Phoenix'));
-                                if($request->completed_at != null) {
-                                    $completedDate = $request->completed_at;
-                                    $newCompletedDate = new DateTime($completedDate);
-                                    //$newCompletedDate->setTimezone(new DateTimeZone(Auth::user()->timezone));
-                                    $newCompletedDate->setTimezone(new DateTimeZone('America/Phoenix'));
-                                    $newCompletedDateFormat = $newCompletedDate->format('m/d/Y h:i:s A');
-                                } else {
-                                    $newCompletedDateFormat = '';
-                                }
-                                $data = $request->data;
-                                $newData = json_decode($data);
-                                if (!is_null($request->custom_properties)) {
-                                    $customProperties = $request->custom_properties;
-                                    $newCustomProperties = json_decode($customProperties);
-                                }
-                            @endphp
-                            @if (($request->element_type == 'task' && $request->task_status == 'ACTIVE') || ($request->element_type == 'end_event' && $request->task_status == 'CLOSED' && $request->element_name == 'Completed' && $request->request_status == 'COMPLETED'))
-                                @if (!empty($request->file_id) || !is_null($request->file_id))
-                                    @if (is_null($newCustomProperties->createdBy))
-                                        <tr>
-                                            <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                            <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
-                                            <td class="text-left">
-                                                @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
-                                                    @php
-                                                        $dataName = $newCustomProperties->data_name;
-                                                        $nameFile = explode('_', $dataName);
-                                                    @endphp
-                                                    @if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile))
-                                                        {{ $nameFile[3] }} {{ $nameFile[4] }}
-                                                    @endif
-                                                @else
-                                                    @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                        {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                                    @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                        {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
-                                                    @endif
-                                                @endif
-                                            </td>
-                                            <td class="text-left">
-                                                @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
-                                                    @if (array_key_exists(5, $nameFile))
-                                                        {{ $nameFile[5] }}
-                                                    @endif
-                                                @else
-                                                    @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                        {{ $newData->EMA_EMPLOYEE_EIN }}
-                                                    @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                        {{ $newData->CON_EMPLOYEE_EIN }}
-                                                    @endif
-                                                @endif
-                                            </td>
-                                            <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                            <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                            <td class="text-left">{{ $request->element_name }}</td>
-                                            <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
-                                            <td class="text-left">{{ $request->request_status }}</td>
-                                            <td class="text-right">
-                                                <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                                <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                                <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
-                                            </td>
-                                        </tr>
-                                    @endif
-                                @else
-                                    @if((empty($newData->EMA_EMPLOYEE_EIN) && empty($newData->CON_EMPLOYEE_EIN)) && $request->request_status == 'COMPLETED')
-                                    @else
-                                        <tr>
-                                            <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                            <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
-                                            <td class="text-left">
-                                                @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
-                                                    @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                        {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                                    @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                        {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
-                                                    @endif
-                                                @endif
-                                            </td>
-                                            <td class="text-left">
-                                                @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
-                                                    @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                        {{ $newData->EMA_EMPLOYEE_EIN }}
-                                                    @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                        {{ $newData->CON_EMPLOYEE_EIN }}
-                                                    @endif
-                                                @endif
-                                            </td>
-                                            <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                            <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                            <td class="text-left">{{ $request->element_name }}</td>
-                                            <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
-                                            <td class="text-left">{{ $request->request_status }}</td>
-                                            <td class="text-right">
-                                                @if ($request->request_status != 'COMPLETED')
-                                                    <a href="#"><i class="fas fa-people-arrows" style="color: #71A2D4;" title="Reassign Request" onclick="reassign({{ $request->request_id }}, {{ $request->task_id }});"></i></a>&nbsp;
-                                                @endif
-                                                <a href="/requests/{{ $request->request_id }}"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                @endif
-                            @endif
-                        @endif
-                    @endforeach
-                @endif
-          </tbody>
         </table>
     </div>
     <div class="modal fade" id="showPdf" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -297,12 +215,33 @@
                         });
 
                         //initially clear select otherwise first option is selected
-                        $('.select2').val(null).trigger('change');
+                        if (this.index() == 8) {
+                            $('.select2').val(["ACTIVE"]).trigger('change');
+                        } else {
+                            $('.select2').val(null).trigger('change');
+                        }
                     }
                 });
             },
             "order": [[ 0, "desc" ]],
-            "pageLength": 25
+            "pageLength": 25,
+            "ajax": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
+            "columns": [
+                {data: 'request_id', className: 'text-left'},
+                {data: 'process_name', className: 'text-left'},
+                {data: 'employee_name', className: 'text-left'},
+                {data: 'employee_ein', className: 'text-left'},
+                {data: 'started', className: 'text-left'},
+                {data: 'completed', className: 'text-left'},
+                {data: 'current_task', className: 'text-left'},
+                {data: 'current_user', className: 'text-left'},
+                {data: 'status', className: 'text-left'},
+                {data: 'options', className: 'text-right'}
+            ],
+            'language':{
+               "loadingRecords": "<div class='lds-ring'><div></div><div></div><div></div><div></div></div><br>Please wait, we are getting your information",
+               "processing": "Loading...2"
+            }
         });
 
         window.reassign = function(request, task) {

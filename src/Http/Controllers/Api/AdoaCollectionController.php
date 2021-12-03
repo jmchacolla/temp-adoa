@@ -25,6 +25,7 @@ class AdoaCollectionController extends Controller
             'data->ADOA_RWA_REMOTE_AGREEMENT_START_DATE as ADOA_RWA_REMOTE_AGREEMENT_START_DATE',
             'data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE as ADOA_RWA_REMOTE_AGREEMENT_END_DATE',
             'data->FILE_ID as FILE_ID',
+            'data->ADOA_RWA_REMOTE_AGREEMENT_VALID as ADOA_RWA_REMOTE_AGREEMENT_VALID'
         )
         ->get();
         return $records;
