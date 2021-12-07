@@ -514,7 +514,7 @@
                                 "data" : app.appraisalList,
                                 "columns": [
                                     { "title": "Request No.",  "data": "REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "From", "data": "EVALUATOR_FIRST_NAME", "defaultContent": "",
+                                    { "title": "Requester Full Name", "data": "EVALUATOR_FIRST_NAME", "defaultContent": "",
                                         "render" : function (data,type, row) {
                                             if(typeof(row.EVALUATOR_LAST_NAME) === 'undefined' ||  row.EVALUATOR_LAST_NAME == null
                                             || typeof(row.EVALUATOR_FIRST_NAME) === 'undefined' || row.EVALUATOR_FIRST_NAME == null) {
@@ -523,22 +523,13 @@
                                             return row.EVALUATOR_LAST_NAME + " " +  row.EVALUATOR_FIRST_NAME;
                                         }
                                     },
-                                    { "title": "To", "data": "fullname", "defaultContent": "",
-                                        "render": function (data, type, row) {
-                                            if(typeof(row.EMPLOYEE_LAST_NAME) === 'undefined' || row.EMPLOYEE_LAST_NAME == null
-                                            || typeof(row.EMPLOYEE_FIRST_NAME) === 'undefined' || row.EMPLOYEE_FIRST_NAME == null) {
-                                                return 'No registered';
-                                            }
-                                            return row.EMPLOYEE_LAST_NAME + " " +  row.EMPLOYEE_FIRST_NAME
-                                        }
-                                    },
                                     { "title": "EIN", "data": "EMPLOYEE_EIN", "defaultContent": "", "sortable": false},
                                     { "title": "Type", "data": "type", "defaultContent": "",
                                         "render": function (data, type, row) {
                                             return app.getAppraisalType(row.AZP_PROCESS);
                                         }
                                     },
-                                    { "title": "Date", "data": "date", "defaultContent": "",
+                                    { "title": "Date", "data": "date", "defaultContent": "", "class": "text-center",
                                         "render": function (data, type, row) {
                                             let dateFormat = new Date(row.DATE);
 
@@ -551,7 +542,7 @@
                                         }
                                     },
                                     {
-                                        "title": "Actions", "data" : "", "sortable": false, "defaultContent": "",
+                                        "title": "Actions", "data" : "", "sortable": false, "defaultContent": "", "class": "text-center",
                                         "render": function (data, type,row) {
                                             let html = '';
                                             html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';
