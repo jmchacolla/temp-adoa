@@ -52,7 +52,6 @@ class AdoaCollectionController extends Controller
             'data->EVALUATOR_FIRST_NAME as EVALUATOR_FIRST_NAME',
             'data->EVALUATOR_LAST_NAME as EVALUATOR_LAST_NAME',
             'data->AZP_PROCESS as AZP_PROCESS',
-            'data->CONTENT as CONTENT',
             'data->DATE as DATE',
             'data->FILE_ID as FILE_ID'
         )

@@ -479,46 +479,6 @@
                         }
                         return type;
                     },
-                    getAppraisalContent(type, contentJson){
-                        let content = '';
-                        let appraisalContent = '';
-                        content = JSON.parse(contentJson);
-
-                        if(contentJson !== null && contentJson.length > 0 && contentJson != '') {
-
-                            switch (type) {
-                                case 'MY_COACHING_NOTES':
-                                    if (content.commitments != null && content.commitments != '') {
-                                        appraisalContent = content.commitments;
-                                    }
-                                break;
-                                case 'COACHING_NOTES_MANAGER':
-                                    if (content.commitments != null && content.commitments != '') {
-                                        appraisalContent = content.commitments;
-                                    }
-                                break;
-                                case 'SELF_APPRAISAL':
-                                    if (content.section5_comments != null && content.section5_comments != '') {
-                                        appraisalContent = content.section5_comments;
-                                    }
-                                break;
-                                case 'INFORMAL_APPRAISAL':
-                                    if (content.section5_comments != null && content.section5_comments != '') {
-                                        appraisalContent = content.section5_comments;
-                                    }
-                                break;
-                                case 'FORMAL_APPRAISAL':
-                                    if (content.section5_comments != null && content.section5_comments != '') {
-                                        appraisalContent = content.section5_comments;
-                                    }
-                                break;
-                                default:
-                                    appraisalContent = '';
-                                break;
-                            }
-                        }
-                        return appraisalContent;
-                    },
                     exportPdf() {
                         window.location = "{{ URL::asset('adoa/employee-appraisal/print') }}" +
                         "?employeeName=" +
@@ -576,11 +536,6 @@
                                     { "title": "Type", "data": "type", "defaultContent": "",
                                         "render": function (data, type, row) {
                                             return app.getAppraisalType(row.AZP_PROCESS);
-                                        }
-                                    },
-                                    { "title": "Comments", "data": "content", "defaultContent": "",
-                                        "render": function (data, type, row, meta) {
-                                            return app.getAppraisalContent(row.AZP_PROCESS, row.CONTENT)
                                         }
                                     },
                                     { "title": "Date", "data": "date", "defaultContent": "",
