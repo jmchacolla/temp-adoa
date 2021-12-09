@@ -520,7 +520,7 @@
                                             || typeof(row.EVALUATOR_FIRST_NAME) === 'undefined' || row.EVALUATOR_FIRST_NAME == null) {
                                                 return 'No registered';
                                             }
-                                            return row.EVALUATOR_LAST_NAME + " " +  row.EVALUATOR_FIRST_NAME;
+                                            return row.EVALUATOR_FIRST_NAME + " " +  row.EVALUATOR_LAST_NAME;
                                         }
                                     },
                                     { "title": "EIN", "data": "EMPLOYEE_EIN", "defaultContent": "", "sortable": false},

@@ -239,8 +239,7 @@
                 {data: 'options', className: 'text-right'}
             ],
             'language':{
-               "loadingRecords": "<div class='lds-ring'><div></div><div></div><div></div><div></div></div><br>Please wait, we are getting your information",
-               "processing": "Loading...2"
+               "loadingRecords": "<div class='lds-ring'><div></div><div></div><div></div><div></div></div><br>Please wait, we are getting your information"
             }
         });
 
