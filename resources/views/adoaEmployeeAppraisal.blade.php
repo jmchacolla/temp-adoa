@@ -479,46 +479,6 @@
                         }
                         return type;
                     },
-                    getAppraisalContent(type, contentJson){
-                        let content = '';
-                        let appraisalContent = '';
-                        content = JSON.parse(contentJson);
-
-                        if(contentJson !== null && contentJson.length > 0 && contentJson != '') {
-
-                            switch (type) {
-                                case 'MY_COACHING_NOTES':
-                                    if (content.commitments != null && content.commitments != '') {
-                                        appraisalContent = content.commitments;
-                                    }
-                                break;
-                                case 'COACHING_NOTES_MANAGER':
-                                    if (content.commitments != null && content.commitments != '') {
-                                        appraisalContent = content.commitments;
-                                    }
-                                break;
-                                case 'SELF_APPRAISAL':
-                                    if (content.section5_comments != null && content.section5_comments != '') {
-                                        appraisalContent = content.section5_comments;
-                                    }
-                                break;
-                                case 'INFORMAL_APPRAISAL':
-                                    if (content.section5_comments != null && content.section5_comments != '') {
-                                        appraisalContent = content.section5_comments;
-                                    }
-                                break;
-                                case 'FORMAL_APPRAISAL':
-                                    if (content.section5_comments != null && content.section5_comments != '') {
-                                        appraisalContent = content.section5_comments;
-                                    }
-                                break;
-                                default:
-                                    appraisalContent = '';
-                                break;
-                            }
-                        }
-                        return appraisalContent;
-                    },
                     exportPdf() {
                         window.location = "{{ URL::asset('adoa/employee-appraisal/print') }}" +
                         "?employeeName=" +
@@ -554,22 +514,13 @@
                                 "data" : app.appraisalList,
                                 "columns": [
                                     { "title": "Request No.",  "data": "REQUEST_ID", "sortable": true, "defaultContent": "No Regitred", "class": "text-center" },
-                                    { "title": "From", "data": "EVALUATOR_FIRST_NAME", "defaultContent": "",
+                                    { "title": "Requester Full Name", "data": "EVALUATOR_FIRST_NAME", "defaultContent": "",
                                         "render" : function (data,type, row) {
                                             if(typeof(row.EVALUATOR_LAST_NAME) === 'undefined' ||  row.EVALUATOR_LAST_NAME == null
                                             || typeof(row.EVALUATOR_FIRST_NAME) === 'undefined' || row.EVALUATOR_FIRST_NAME == null) {
                                                 return 'No registered';
                                             }
-                                            return row.EVALUATOR_LAST_NAME + " " +  row.EVALUATOR_FIRST_NAME;
-                                        }
-                                    },
-                                    { "title": "To", "data": "fullname", "defaultContent": "",
-                                        "render": function (data, type, row) {
-                                            if(typeof(row.EMPLOYEE_LAST_NAME) === 'undefined' || row.EMPLOYEE_LAST_NAME == null
-                                            || typeof(row.EMPLOYEE_FIRST_NAME) === 'undefined' || row.EMPLOYEE_FIRST_NAME == null) {
-                                                return 'No registered';
-                                            }
-                                            return row.EMPLOYEE_LAST_NAME + " " +  row.EMPLOYEE_FIRST_NAME
+                                            return row.EVALUATOR_FIRST_NAME + " " +  row.EVALUATOR_LAST_NAME;
                                         }
                                     },
                                     { "title": "EIN", "data": "EMPLOYEE_EIN", "defaultContent": "", "sortable": false},
@@ -578,12 +529,7 @@
                                             return app.getAppraisalType(row.AZP_PROCESS);
                                         }
                                     },
-                                    { "title": "Comments", "data": "content", "defaultContent": "",
-                                        "render": function (data, type, row, meta) {
-                                            return app.getAppraisalContent(row.AZP_PROCESS, row.CONTENT)
-                                        }
-                                    },
-                                    { "title": "Date", "data": "date", "defaultContent": "",
+                                    { "title": "Date", "data": "date", "defaultContent": "", "class": "text-center",
                                         "render": function (data, type, row) {
                                             let dateFormat = new Date(row.DATE);
 
@@ -596,7 +542,7 @@
                                         }
                                     },
                                     {
-                                        "title": "Actions", "data" : "", "sortable": false, "defaultContent": "",
+                                        "title": "Actions", "data" : "", "sortable": false, "defaultContent": "", "class": "text-center",
                                         "render": function (data, type,row) {
                                             let html = '';
                                             html += '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' + row.REQUEST_ID + ', ' + row.FILE_ID + ');"></i></a>&nbsp;';

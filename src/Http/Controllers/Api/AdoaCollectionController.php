@@ -47,12 +47,9 @@ class AdoaCollectionController extends Controller
             'data->REQUEST_ID as REQUEST_ID',
             'data->EMPLOYEE_ID as EMPLOYEE_ID',
             'data->EMPLOYEE_EIN as EMPLOYEE_EIN',
-            'data->EMPLOYEE_FIRST_NAME as EMPLOYEE_FIRST_NAME',
-            'data->EMPLOYEE_LAST_NAME as EMPLOYEE_LAST_NAME',
             'data->EVALUATOR_FIRST_NAME as EVALUATOR_FIRST_NAME',
             'data->EVALUATOR_LAST_NAME as EVALUATOR_LAST_NAME',
             'data->AZP_PROCESS as AZP_PROCESS',
-            'data->CONTENT as CONTENT',
             'data->DATE as DATE',
             'data->FILE_ID as FILE_ID'
         )
