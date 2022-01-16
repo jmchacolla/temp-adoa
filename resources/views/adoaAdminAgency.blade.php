@@ -45,10 +45,50 @@
             transform: rotate(360deg);
         }
     }
+    .btn-primary {
+        background-color: #71A2D4 !important;
+        border:solid #71A2D4 !important;
+    }
 </style>
 @section('content')
+<div class="container"  style="margin:10px;">
+    <div class="card col-lg-12 col-md-12 col-sm-12">
+        <div class="" style="text-align:left;padding-top:5px;">
+            <h4 class="">Criteria of Search</h4>
+        </div>
+        <div class="row">
+            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
+                <label for="filterInitDate" style="padding:5px;" class="label-color">From (Request Started)</label>
+                <input type="date" class="form-control" id="filterInitDate">
+            </div>
+            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
+                <label for="filterEndDate"  style="padding:5px;" class="label-color">To (Request Started)</label>
+                <input type="date" class="form-control" id="filterEndDate">
+            </div>
+            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
+                <label for="filterAgency"  style="padding:5px;" class="label-color">Agency</label>
+                <select id="filterAgency" class="select2 form-control">
+                    @foreach ($agenciesArray as $agency)
+                    <option value="{{ $agency }}">{{ $agency }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
+                <label for="filterStatus"  style="padding:5px;" class="label-color">Status</label>
+                <select id="filterStatus" class="select2 form-control">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="COMPLETED">COMPLETED</option>
+                </select>
+            </div>
+            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
+                <button id="btnGetList" class="btn btn-primary btn-sm"  @click="getAppraisalList">Get List</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="col-sm-12">
-    <h3>Agency {{ $agencyName }}</h3>
+    <h3 id="titleAgency">No agency selected</h3>
     <div class="card card-body table-card table-responsive" id="app-adoa">
         <table class="table table-striped table-hover" id="listRequestsAgency" width="100%" style="font-size: 13px">
             <thead class="table-primary">
@@ -170,6 +210,7 @@
             width: '100%',
             minimumInputLength: 2
         });
+        var titleTable = [];
         var table = $('#listRequestsAgency').DataTable({
             "initComplete": function () {
                 count = 0;
@@ -178,6 +219,7 @@
                         var title = this.header();
                         //replace spaces with dashes
                         title = $(title).html().replace(/[\W]/g, '-');
+                        titleTable[this.index()] = title;
                         var column = this;
                         var select = $('<select id="' + title + '" class="select2"></select>')
                         .appendTo( $(column.header()).empty() )
@@ -214,18 +256,11 @@
                             width: '100%'
                         });
 
-                        //initially clear select otherwise first option is selected
-                        if (this.index() == 8) {
-                            $('.select2').val(["ACTIVE"]).trigger('change');
-                        } else {
-                            $('.select2').val(null).trigger('change');
-                        }
+                        $('.select2').val(null).trigger('change');
                     }
                 });
             },
-            "order": [[ 0, "desc" ]],
-            "pageLength": 25,
-            "ajax": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
+            "destroy": true,
             "columns": [
                 {data: 'request_id', className: 'text-left'},
                 {data: 'process_name', className: 'text-left'},
@@ -241,6 +276,104 @@
             'language':{
                "loadingRecords": "<div class='lds-ring'><div></div><div></div><div></div><div></div></div><br>Please wait, we are getting your information"
             }
+        });
+
+        $('#btnGetList').click(function() {
+            if ($('#filterAgency').val() != '') {
+                $('#titleAgency').html('');
+                $('#titleAgency').html('Agency ' + $('#filterAgency').val());
+            }
+            var table = $('#listRequestsAgency').DataTable({
+                "initComplete": function () {
+                    count = 0;
+                    this.api().columns().every( function () {
+                        if(this.index() != 0 && this.index() != 9) {
+                            var title = titleTable[this.index()];
+                            //replace spaces with dashes
+                            var column = this;
+                            var select = $('<select id="' + title + '" class="select2"></select>')
+                            .appendTo( $(column.header()).empty() )
+                            .on( 'change', function () {
+                                //Get the "text" property from each selected data
+                                //regex escape the value and store in array
+                                var data = $.map( $(this).select2('data'), function( value, key ) {
+                                    return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
+                                });
+
+                                //if no data selected use ""
+                                if (data.length === 0) {
+                                    data = [""];
+                                }
+
+                                //join array into string with regex or (|)
+                                var val = data.join('|');
+
+                                //search for the option(s) selected
+                                column.search( val ? val : '', true, false ).draw();
+                            });
+
+                            column.data().unique().sort().each(function (d, j) {
+                                if (d != "") {
+                                    select.append( '<option value="' + d + '">' + d + '</option>' );
+                                }
+                            });
+
+                            //use column title as selector and placeholder
+                            $('#' + title).select2({
+                                multiple: true,
+                                closeOnSelect: true,
+                                placeholder: title,
+                                width: '100%'
+                            });
+
+                            $('#listRequestsAgency .select2').val(null).trigger('change');
+                        }
+                    });
+                },
+                "order": [[ 0, "desc" ]],
+                "pageLength": 25,
+                "destroy": true,
+                "ajax": {
+                    "url": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
+                    "type": "GET",
+                    "data": {
+                        "filterInitDate": $("#filterInitDate").val(),
+                        "filterEndDate": $("#filterEndDate").val(),
+                        "filterAgency": $("#filterAgency").val(),
+                        "filterStatus": $("#filterStatus").val()
+                    }
+                },
+                "columns": [
+                    {data: 'request_id', className: 'text-left'},
+                    {data: 'process_name', className: 'text-left'},
+                    {data: 'employee_name', className: 'text-left'},
+                    {data: 'employee_ein', className: 'text-left'},
+                    {data: 'started', className: 'text-left'},
+                    {data: 'completed', className: 'text-left'},
+                    {data: 'current_task', className: 'text-left'},
+                    {data: 'current_user', className: 'text-left'},
+                    {data: 'status', className: 'text-left'},
+                    {data: 'options', className: 'text-right'}
+                ],
+                'language':{
+                   "loadingRecords": "<div class='lds-ring'><div></div><div></div><div></div><div></div></div><br>Please wait, we are getting your information"
+                }
+            });
+        });
+
+        $('#filterAgency').select2({
+            multiple: true,
+            closeOnSelect: true,
+            placeholder: 'Agency',
+            width: '100%',
+            maximumSelectionLength: 3
+        });
+
+        $('#filterStatus').select2({
+            multiple: true,
+            closeOnSelect: true,
+            placeholder: 'Status',
+            width: '100%'
         });
 
         window.reassign = function(request, task) {

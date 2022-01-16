@@ -133,7 +133,17 @@ class AdoaController extends Controller
     public function getListRequestsAgency($groupId) {
         $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
         if (count($member) > 0 && $groupId == config('adoa.agency_admin_group_id')) {
-            return view('adoa::adoaAdminAgency', ['agencyName' => Auth::user()->meta->agency, 'groupId' => config('adoa.agency_admin_group_id')]);
+            $agencies = explode(',', Auth::user()->meta->agency);
+            $agenciesArray = array();
+
+            if (count($agencies) == 1 && $agencies[0] == 'ALL') {
+                $agenciesArray = ['PR', 'RT', 'AB', 'AD', 'AE', 'AF', 'AG', 'AH', 'AT', 'BB', 'BD', 'BH', 'BN', 'BR', 'CB', 'CC', 'CD', 'CE', 'CH', 'CL', 'CO', 'CS', 'CT', 'DC', 'DE', 'DJ', 'DT', 'EB', 'ED', 'EP', 'EQ', 'EV', 'FI', 'FO', 'GF', 'GH', 'GM', 'GS', 'GV', 'HC', 'HD', 'HG', 'HI', 'HL', 'HO', 'HS', 'HU', 'IA', 'IB', 'IC', 'ID', 'JC', 'JL', 'LA', 'LC', 'LD', 'LL', 'LO', 'LW', 'MA', 'ME', 'MI', 'MN', 'NB', 'OB', 'OS', 'PA', 'PE', 'PH', 'PI', 'PM', 'PS', 'RB', 'RC', 'RD', 'RE', 'RG', 'RV', 'SD', 'SF', 'SN', 'SP', 'ST', 'TO', 'TR', 'UL', 'VS', 'VT', 'WC', 'WF', 'WM', 'AM', 'AN', 'AU', 'BA', 'BF', 'CN', 'CR', 'DF', 'DO', 'DX', 'EC', 'EO', 'FA', 'FD', 'FX', 'HE', 'MT', 'NC', 'NS', 'OT', 'PB', 'PO', 'PP', 'PT', 'PV', 'RS', 'SY', 'TE', 'TX', 'UO'];
+            } else {
+                foreach($agencies as $agency) {
+                    $agenciesArray[] = $agency;
+                }
+            }
+            return view('adoa::adoaAdminAgency', ['groupId' => config('adoa.agency_admin_group_id'), 'agenciesArray' => $agenciesArray]);
         } else {
             return abort(403, 'Unauthorized action.');
         }
@@ -238,6 +248,12 @@ class AdoaController extends Controller
             ->select('id')
             ->where('status', 'ACTIVE')
             ->where('username', $ein)
+            ->get();
+    }
+
+    public function getUserByEin($ein) {
+        return DB::table('users')
+            ->where('meta->ein', $ein)
             ->get();
     }
 
@@ -373,8 +389,6 @@ class AdoaController extends Controller
                 $task->user_id = $userToAssign;
                 $task->persistUserData($userToAssign);
             } else {
-                // Validate if user can reassign
-                //$task->authorizeReassignment(Auth::user());
                 // Reassign user
                 $task->user_id = $userToAssign;
                 $task->persistUserData($userToAssign);
@@ -382,8 +396,6 @@ class AdoaController extends Controller
             $task->save();
 
             // Send a notification to the user
-            //$notification = new TaskReassignmentNotification($task);
-            //$task->user->notify($notification);
             event(new ActivityAssigned($task));
             return new Resource($task->refresh());
         } else {
@@ -391,19 +403,24 @@ class AdoaController extends Controller
         }
     }
 
-    public function getListRequestsAgencyDashboard($groupId) {
+    public function getListRequestsAgencyDashboard($groupId, Request $request) {
         $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
         if (count($member) > 0 && $groupId == config('adoa.agency_admin_group_id')) {
             //Getting Agency Information from meta data
-            $agencies = explode(',', Auth::user()->meta->agency);
-            $agenciesArray = array();
+            if (empty($request->input('filterAgency'))) {
+                $agencies = explode(',', Auth::user()->meta->agency);
+                $agenciesArray = array();
 
-            if (count($agencies) == 1 && $agencies[0] == 'ALL') {
-                $flagAgency = 0;
-            } else {
-                foreach($agencies as $agency) {
-                    $agenciesArray[] = $agency;
+                if (count($agencies) == 1 && $agencies[0] == 'ALL') {
+                    $flagAgency = 0;
+                } else {
+                    foreach($agencies as $agency) {
+                        $agenciesArray[] = $agency;
+                    }
+                    $flagAgency = 1;
                 }
+            } else {
+                $agenciesArray = $request->input('filterAgency');
                 $flagAgency = 1;
             }
 
@@ -440,6 +457,7 @@ class AdoaController extends Controller
                 ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
                 ->join('processes', 'process_request_tokens.process_id', '=', 'processes.id')
                 ->select('process_request_tokens.id AS task_id',
+                    'process_requests.process_id',
                     'process_request_tokens.element_name',
                     'process_request_tokens.element_type',
                     'process_request_tokens.process_request_id as request_id',
@@ -461,15 +479,8 @@ class AdoaController extends Controller
                     'process_requests.data->_user->lastname as lastname',
                     'process_requests.user_id as user_id')
                 ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
-                ->whereNotIn('processes.process_category_id', [1, 2])
-                ->whereIn('process_requests.process_id', [41, 40, 39, 38, 36, 28, 23, 29, 30, 21])
-                ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
-                ->whereIn('process_request_tokens.id', function($query) {
-                    $query->selectRaw('max(id)')
-                        ->from('process_request_tokens')
-                        ->groupBy('process_request_id')
-                        ->groupBy('element_name');
-                });
+                ->whereNotIn('processes.process_category_id', [1, 2]);
+                //->whereIn('process_requests.process_id', [41, 40, 39, 38, 36, 28, 23, 29, 30, 21])
 
             if ($flagAgency == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
@@ -486,7 +497,31 @@ class AdoaController extends Controller
                     ->whereIn('users.meta->process_level', $levelsArray);
             }
 
+            if (!empty($request->input('filterInitDate'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->where('process_requests.created_at', '>=', $request->input('filterInitDate'));
+            }
+
+            if (!empty($request->input('filterEndDate'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->where('process_requests.created_at', '<=', $request->input('filterEndDate'));
+            }
+
+            if (empty($request->input('filterStatus'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED']);
+            } else {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->whereIn('process_requests.status', $request->input('filterStatus'));
+            }
+
             $adoaListRequestsAgency = $adoaListRequestsAgency
+                ->whereIn('process_request_tokens.id', function($query) {
+                    $query->selectRaw('max(id)')
+                        ->from('process_request_tokens')
+                        ->groupBy('process_request_id')
+                        ->groupBy('element_name');
+                })
                 ->orderBy('process_requests.id', 'desc')
                 ->get();
 
@@ -615,5 +650,23 @@ class AdoaController extends Controller
         } else {
             return abort(403, 'Unauthorized action.');
         }
+    }
+
+    public function getValidAgreement($collectionId) {
+        $date = date('m/d/Y');
+        $range = date('m/d/Y', strtotime($date . ' +20 day'));
+
+        return DB::table('collection_' . $collectionId)
+            ->select('id',
+                'data->ADOA_RWA_REMOTE_AGREEMENT_START_DATE as ADOA_RWA_REMOTE_AGREEMENT_START_DATE',
+                'data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE as ADOA_RWA_REMOTE_AGREEMENT_END_DATE',
+                'data->REQUEST_ID as REQUEST_ID',
+                'data->ADOA_RWA_REMOTE_AGREEMENT_VALID as ADOA_RWA_REMOTE_AGREEMENT_VALID',
+                'data->USER_ID as USER_ID',
+                'data->ADOA_RWA_POSITION as ADOA_RWA_POSITION',
+                'data->ADOA_RWA_EMPLOYEE_EMAIL as ADOA_RWA_EMPLOYEE_EMAIL')
+            ->where('data->ADOA_RWA_REMOTE_AGREEMENT_VALID', 'Y')
+            ->where('data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE', '<', $range)
+            ->get();
     }
 }

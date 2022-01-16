@@ -1,4 +1,5 @@
 <?php
+
 Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::get('admin/adoa/fetch', 'AdoaController@fetch')->name('package.skeleton.fetch');
     Route::apiResource('admin/adoa', 'AdoaController');
@@ -17,6 +18,7 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::get('adoa/group-admin-agency/{user_id}/{groupId}', 'AdoaController@getGroupAdminAgency');
     Route::get('adoa/group-admin/{user_id}', 'AdoaController@getGroupAdmin');
     Route::get('adoa/user-ein/{ein}', 'AdoaController@getUserInformation');
+    Route::get('adoa/user-by-ein/{ein}', 'AdoaController@getUserByEin');
     Route::get('adoa/get-information/{type}/{user_id}', 'AdoaUserInformationController@getInformation');
     Route::get('adoa/get-information-by-manager/{type}/{user_id}', 'AdoaUserInformationController@getInformationByManager');
     Route::get('adoa/get-open-task/{user_id}/{request_id}', 'AdoaController@getOpenTask');
@@ -35,4 +37,5 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::post('adoa/rwa-collection/rwa-report', 'Api\AdoaCollectionController@getRwaReportByUser');
     Route::post('adoa/azp-collection/azp-report', 'Api\AdoaCollectionController@getAzpReportByUser');
     Route::put('adoa/update-task/{task}', 'AdoaController@updateTaskRequest');
+    Route::get('adoa/expiration-agreement/{collectionId}', 'AdoaController@getValidAgreement');
 });
