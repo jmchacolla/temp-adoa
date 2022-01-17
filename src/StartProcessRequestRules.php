@@ -46,7 +46,7 @@ class StartProcessRequestRules {
             $response = $client->request('GET', $url, ['headers' => $headers]);
             $response = json_decode($response->getBody(), true);
 
-            return Arr::get($response, 'rows.0.1') === 'Y' ? true : false;
+            return Arr::get($response, 'rows.0.1') === 'Y' || $agency === 'ALL' ? true : false;
         });
         return $result;
     }
