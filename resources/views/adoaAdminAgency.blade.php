@@ -57,29 +57,39 @@
             <h4 class="">Criteria of Search</h4>
         </div>
         <div class="row">
-            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
-                <label for="filterInitDate" style="padding:5px;" class="label-color">From (Request Started)</label>
+            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                <label for="filterInitDate" style="padding:5px; font-size: 13px">From (Request Started)</label>
                 <input type="date" class="form-control" id="filterInitDate">
             </div>
-            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
-                <label for="filterEndDate"  style="padding:5px;" class="label-color">To (Request Started)</label>
+            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                <label for="filterEndDate"  style="padding:5px; font-size: 13px">To (Request Started)</label>
                 <input type="date" class="form-control" id="filterEndDate">
             </div>
-            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
-                <label for="filterAgency"  style="padding:5px;" class="label-color">Agency</label>
+            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                <label for="filterAgency"  style="padding:5px; font-size: 13px">Agency</label>
                 <select id="filterAgency" class="select2 form-control">
                     @foreach ($agenciesArray as $agency)
                     <option value="{{ $agency }}">{{ $agency }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
-                <label for="filterStatus"  style="padding:5px;" class="label-color">Status</label>
+            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                <label for="filterLevel"  style="padding:5px; font-size: 13px">Process Level</label>
+                <select id="filterLevel" class="select2 form-control">
+                    @foreach ($levelsArray as $level)
+                    <option value="{{ $level }}">{{ $level }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                <label for="filterStatus"  style="padding:5px; font-size: 13px">Status</label>
                 <select id="filterStatus" class="select2 form-control">
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="COMPLETED">COMPLETED</option>
                 </select>
             </div>
+        </div>
+        <div class="row">
             <div class="form-group col col-lg-3 col-md-3 col-sm-12">
                 <button id="btnGetList" class="btn btn-primary btn-sm"  @click="getAppraisalList">Get List</button>
             </div>
@@ -340,7 +350,8 @@
                         "filterInitDate": $("#filterInitDate").val(),
                         "filterEndDate": $("#filterEndDate").val(),
                         "filterAgency": $("#filterAgency").val(),
-                        "filterStatus": $("#filterStatus").val()
+                        "filterStatus": $("#filterStatus").val(),
+                        "filterLevel": $("#filterLevel").val()
                     }
                 },
                 "columns": [
@@ -367,6 +378,13 @@
             placeholder: 'Agency',
             width: '100%',
             maximumSelectionLength: 3
+        });
+
+        $('#filterLevel').select2({
+            multiple: true,
+            closeOnSelect: true,
+            placeholder: 'Process Level',
+            width: '100%'
         });
 
         $('#filterStatus').select2({
@@ -422,7 +440,44 @@
         $('#showReassing').on('hidden.bs.modal', function () {
             $('#selectUserId').val(null).trigger('change');
             $('#divMessageError').css("display", "none");
-        })
+        });
+
+        $('#filterLevel').prop('disabled', true);
+
+        $('#filterAgency').change(function() {
+            if ($('#filterAgency').val() != '') {
+                $('#filterLevel').prop('disabled', false);
+                $('#filterLevel').select2({
+                    multiple: true,
+                    closeOnSelect: true,
+                    placeholder: 'Process Level',
+                    width: '100%',
+                    matcher: function(term, text, option) {
+                        let value = '';
+                        $('#filterAgency').val().forEach(function(item, index, array) {
+                            if (text.id.substr(0, 2) == item) {
+                                value = text;
+                            }
+                        });
+                        return value;
+                    }
+                });
+                /*if ($('#filterLevel').val() == '') {
+                    $('#filterLevel').prop('disabled', true);
+                } else {
+                    $('#filterLevel').prop('disabled', false);
+                }*/
+            } else {
+                $('#filterLevel').val('').trigger('change');
+                $('#filterLevel').prop('disabled', true);
+                $('#filterLevel').select2({
+                    multiple: true,
+                    closeOnSelect: true,
+                    placeholder: 'Process Level',
+                    width: '100%'
+                });
+            }
+        });
     });
 </script>
 @endsection
