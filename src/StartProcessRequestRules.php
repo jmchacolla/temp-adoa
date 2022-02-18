@@ -1,6 +1,7 @@
 <?php
 namespace ProcessMaker\Package\Adoa;
 
+use Auth;
 use ProcessMaker\Models\Process;
 use ProcessMaker\Models\ProcessRequest;
 use ProcessMaker\Models\EnvironmentVariable;
@@ -46,7 +47,10 @@ class StartProcessRequestRules {
             $response = $client->request('GET', $url, ['headers' => $headers]);
             $response = json_decode($response->getBody(), true);
 
-            return Arr::get($response, 'rows.0.1') === 'Y' || $agency === 'ALL' ? true : false;
+            $groups = Auth::user()->groups->pluck('id');
+            $inAgencyGroup = $groups->contains(config('adoa.agency_admin_group_id'));
+
+            return Arr::get($response, 'rows.0.1') === 'Y' || $inAgencyGroup ? true : false;
         });
         return $result;
     }

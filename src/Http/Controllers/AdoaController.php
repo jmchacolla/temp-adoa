@@ -143,7 +143,19 @@ class AdoaController extends Controller
                     $agenciesArray[] = $agency;
                 }
             }
-            return view('adoa::adoaAdminAgency', ['groupId' => config('adoa.agency_admin_group_id'), 'agenciesArray' => $agenciesArray]);
+
+            $levels = explode(',', Auth::user()->meta->employee_process_level);
+            $levelsArray = array();
+
+            if (count($levels) == 1 && $levels[0] == 'ALL') {
+                $levelsArray = [];
+            } else {
+                foreach($levels as $level) {
+                    $levelsArray[] = $level;
+                }
+            }
+
+            return view('adoa::adoaAdminAgency', ['groupId' => config('adoa.agency_admin_group_id'), 'agenciesArray' => $agenciesArray, 'levelsArray' => $levelsArray]);
         } else {
             return abort(403, 'Unauthorized action.');
         }
@@ -368,7 +380,6 @@ class AdoaController extends Controller
 
     public function updateTaskRequest(Request $request, ProcessRequestToken $task)
     {
-        //$this->authorize('update', $task);
         if ($request->input('status') === 'COMPLETED') {
             if ($task->status === 'CLOSED') {
                 return abort(422, __('Task already closed'));
@@ -438,15 +449,20 @@ class AdoaController extends Controller
             }
 
             //Getting Agency Information from meta data
-            $levels = explode(',', Auth::user()->meta->employee_process_level);
-            $levelsArray = array();
+            if (empty($request->input('filterLevel'))) {
+                $levels = explode(',', Auth::user()->meta->employee_process_level);
+                $levelsArray = array();
 
-            if (count($levels) == 1 && $levels[0] == 'ALL') {
-                $flagLevel = 0;
-            } else {
-                foreach($levels as $level) {
-                    $levelsArray[] = $level;
+                if (count($levels) == 1 && $levels[0] == 'ALL') {
+                    $flagLevel = 0;
+                } else {
+                    foreach($levels as $level) {
+                        $levelsArray[] = $level;
+                    }
+                    $flagLevel = 1;
                 }
+            } else {
+                $levelsArray = $request->input('filterLevel');
                 $flagLevel = 1;
             }
 
@@ -485,7 +501,7 @@ class AdoaController extends Controller
             if ($flagAgency == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
                     ->whereIn('users.meta->agency', $agenciesArray);
-            }
+                }
 
             if ($flagProcess == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
@@ -494,7 +510,8 @@ class AdoaController extends Controller
 
             if ($flagLevel == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
-                    ->whereIn('users.meta->process_level', $levelsArray);
+                    ->whereIn('users.meta->process_level', $levelsArray)
+                    ->orWhereIn('users.meta->employee_process_level', $levelsArray);
             }
 
             if (!empty($request->input('filterInitDate'))) {
@@ -656,7 +673,7 @@ class AdoaController extends Controller
         $date = date('m/d/Y');
         $range = date('m/d/Y', strtotime($date . ' +20 day'));
 
-        return DB::table('collection_' . $collectionId)
+        $validAgreements = DB::table('collection_' . $collectionId)
             ->select('id',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_START_DATE as ADOA_RWA_REMOTE_AGREEMENT_START_DATE',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE as ADOA_RWA_REMOTE_AGREEMENT_END_DATE',
@@ -666,7 +683,15 @@ class AdoaController extends Controller
                 'data->ADOA_RWA_POSITION as ADOA_RWA_POSITION',
                 'data->ADOA_RWA_EMPLOYEE_EMAIL as ADOA_RWA_EMPLOYEE_EMAIL')
             ->where('data->ADOA_RWA_REMOTE_AGREEMENT_VALID', 'Y')
-            ->where('data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE', '<', $range)
             ->get();
+
+        $finalValidAgreements = array();
+        foreach ($validAgreements as $agreement) {
+            $endAgreement = date('m/d/Y', strtotime($agreement->ADOA_RWA_REMOTE_AGREEMENT_END_DATE));
+            if (strtotime($endAgreement) < strtotime($range)) {
+                $finalValidAgreements[] = $agreement;
+            }
+        }
+        return $finalValidAgreements;
     }
 }
