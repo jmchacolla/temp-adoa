@@ -269,6 +269,12 @@ class AdoaController extends Controller
             ->get();
     }
 
+    public function getUserById($user_id) {
+        return DB::table('users')
+            ->where('id', $user_id)
+            ->first();
+    }
+
     public function getOpenTask($user_id, $request_id){
         return DB::table('process_request_tokens')
             ->select('id')
@@ -428,10 +434,18 @@ class AdoaController extends Controller
                     foreach($agencies as $agency) {
                         $agenciesArray[] = $agency;
                     }
+                    $agenciesArray[] = Auth::user()->meta->agency;
                     $flagAgency = 1;
                 }
             } else {
                 $agenciesArray = $request->input('filterAgency');
+                $agencies = explode(',', Auth::user()->meta->agency);
+
+                if (count($agencies) == 1 && $agencies[0] == 'ALL') {
+                    $agenciesArray[] = $agencies[0];
+                } else {
+                    $agenciesArray[] = Auth::user()->meta->agency;
+                }
                 $flagAgency = 1;
             }
 
@@ -470,7 +484,7 @@ class AdoaController extends Controller
             $adoaListRequestsAgency = DB::table('process_request_tokens')
                 ->leftJoin('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
                 ->leftJoin('media', 'process_request_tokens.process_request_id', '=', 'media.model_id')
-                ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
+                ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
                 ->join('processes', 'process_request_tokens.process_id', '=', 'processes.id')
                 ->select('process_request_tokens.id AS task_id',
                     'process_requests.process_id',
@@ -487,16 +501,16 @@ class AdoaController extends Controller
                     'process_requests.data->CON_EMPLOYEE_FIRST_NAME as con_employee_first_name',
                     'process_requests.data->CON_EMPLOYEE_LAST_NAME as con_employee_last_name',
                     'process_requests.data->CON_EMPLOYEE_EIN as con_employee_ein',
+                    'process_requests.data->FA_OWNER as FA_OWNER',
                     'process_requests.created_at',
                     'process_requests.completed_at',
                     'media.id AS file_id',
                     'media.custom_properties',
-                    'process_requests.data->_user->firstname as firstname',
-                    'process_requests.data->_user->lastname as lastname',
-                    'process_requests.user_id as user_id')
+                    'users.firstname as firstname',
+                    'users.lastname as lastname',
+                    'users.id as user_id')
                 ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
                 ->whereNotIn('processes.process_category_id', [1, 2]);
-                //->whereIn('process_requests.process_id', [41, 40, 39, 38, 36, 28, 23, 29, 30, 21])
 
             if ($flagAgency == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
@@ -638,6 +652,12 @@ class AdoaController extends Controller
                                     }
                                     $options .= '&nbsp;<a href="/requests/' . $request->request_id . '"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>';
 
+                                    if (($request->element_name == 'Review Appraisal') && empty($request->firstname) && empty($request->lastname) && !empty($request->FA_OWNER)) {
+                                        $userOwner = $this->getUserById($request->FA_OWNER);
+                                        $request->firstname = $userOwner->firstname;
+                                        $request->lastname = $userOwner->lastname;
+                                    }
+
                                     $dataTable[] = [
                                         'request_id' => $request->request_id,
                                         'process_name' => $request->process_id == $process_id_terminate_rwa_send_email_and_pdf ? 'Remote Work - Terminate Agreement' : $request->name,
@@ -693,5 +713,10 @@ class AdoaController extends Controller
             }
         }
         return $finalValidAgreements;
+    }
+
+    public function getRequestsUnassigned() {
+        $unasiggnedRequests = DB::select(DB::raw("SELECT id FROM process_requests AS table2 WHERE status = 'ACTIVE' AND id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
+        return $unasiggnedRequests;
     }
 }
