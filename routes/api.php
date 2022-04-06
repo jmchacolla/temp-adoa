@@ -38,4 +38,5 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::post('adoa/azp-collection/azp-report', 'Api\AdoaCollectionController@getAzpReportByUser');
     Route::put('adoa/update-task/{task}', 'AdoaController@updateTaskRequest');
     Route::get('adoa/expiration-agreement/{collectionId}', 'AdoaController@getValidAgreement');
+    Route::get('adoa/unasiggned', 'AdoaController@getRequestsUnassigned');
 });

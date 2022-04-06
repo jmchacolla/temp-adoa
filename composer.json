@@ -1,9 +1,9 @@
 {
-    "name": "processmaker/adoa",
+    "name": "processmaker/customer-adoa",
     "friendly_name": "Adoa",
     "description": "ADOA package",
     "license": "AGPL-3.0-or-later",
-    "version": "6.5.1",
+    "version": "6.5.2",
     "type": "project",
 
     "authors": [
