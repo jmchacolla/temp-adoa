@@ -13,6 +13,7 @@
         }
     ],
     "require": {
+        "barryvdh/laravel-dompdf": "^1.0"
     },
     "autoload": {
         "psr-4": {
