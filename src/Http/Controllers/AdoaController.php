@@ -484,7 +484,7 @@ class AdoaController extends Controller
             $adoaListRequestsAgency = DB::table('process_request_tokens')
                 ->leftJoin('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
                 ->leftJoin('media', 'process_request_tokens.process_request_id', '=', 'media.model_id')
-                ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
+                ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
                 ->join('processes', 'process_request_tokens.process_id', '=', 'processes.id')
                 ->select('process_request_tokens.id AS task_id',
                     'process_requests.process_id',
@@ -492,7 +492,6 @@ class AdoaController extends Controller
                     'process_request_tokens.element_type',
                     'process_request_tokens.process_request_id as request_id',
                     'process_request_tokens.status as task_status',
-                    'process_requests.process_id',
                     'process_requests.name',
                     'process_requests.status as request_status',
                     'process_requests.data->EMA_EMPLOYEE_FIRST_NAME as ema_employee_first_name',
@@ -506,9 +505,7 @@ class AdoaController extends Controller
                     'process_requests.completed_at',
                     'media.id AS file_id',
                     'media.custom_properties',
-                    'users.firstname as firstname',
-                    'users.lastname as lastname',
-                    'users.id as user_id')
+                    'process_request_tokens.user_id as user_id_task')
                 ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
                 ->whereNotIn('processes.process_category_id', [1, 2]);
 
@@ -548,13 +545,13 @@ class AdoaController extends Controller
 
             $adoaListRequestsAgency = $adoaListRequestsAgency
                 ->whereIn('process_request_tokens.id', function($query) {
-                    $query->selectRaw('max(id)')
+                    $query->selectRaw('max(id) as id')
                         ->from('process_request_tokens')
-                        ->groupBy('process_request_id')
-                        ->groupBy('element_name');
+                        ->groupBy('id');
                 })
                 ->orderBy('process_requests.id', 'desc')
-                ->get();
+                ->get()
+                ->unique('task_id');
 
             $process_id_terminate_rwa_send_email_and_pdf = EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value;
             $count = count($adoaListRequestsAgency);
@@ -622,8 +619,8 @@ class AdoaController extends Controller
                                         'employee_ein' => $employeeEin,
                                         'started' => $newCreatedDate->format('m/d/Y h:i:s A'),
                                         'completed' => $newCompletedDateFormat,
-                                        'current_task' => $request->element_name,
-                                        'current_user' => $request->firstname . ' ' . $request->lastname,
+                                        'current_task' => '',
+                                        'current_user' => '',
                                         'status' => $request->request_status,
                                         'options' => $options
                                     ];
@@ -631,6 +628,10 @@ class AdoaController extends Controller
                             } else {
                                 if ((empty($request->ema_employee_ein) && empty($request->con_employee_ein)) && $request->request_status == 'COMPLETED') {
                                 } else {
+                                    $userOwnerTask = $this->getUserById($request->user_id_task);
+                                    $request->firstname = $userOwnerTask->firstname;
+                                    $request->lastname = $userOwnerTask->lastname;
+
                                     $employeeName = '';
                                     $employeeEin = '';
                                     if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf) {
@@ -652,12 +653,6 @@ class AdoaController extends Controller
                                     }
                                     $options .= '&nbsp;<a href="/requests/' . $request->request_id . '"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>';
 
-                                    if (($request->element_name == 'Review Appraisal') && empty($request->firstname) && empty($request->lastname) && !empty($request->FA_OWNER)) {
-                                        $userOwner = $this->getUserById($request->FA_OWNER);
-                                        $request->firstname = $userOwner->firstname;
-                                        $request->lastname = $userOwner->lastname;
-                                    }
-
                                     $dataTable[] = [
                                         'request_id' => $request->request_id,
                                         'process_name' => $request->process_id == $process_id_terminate_rwa_send_email_and_pdf ? 'Remote Work - Terminate Agreement' : $request->name,
@@ -676,7 +671,6 @@ class AdoaController extends Controller
                     }
                 }
             }
-
             $dataTableFormat = [
                 'recordsTotal' => count($dataTable),
                 'recordsFiltered' => count($dataTable),
