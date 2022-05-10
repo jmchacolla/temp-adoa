@@ -3,7 +3,7 @@
     "friendly_name": "Adoa",
     "description": "ADOA package",
     "license": "AGPL-3.0-or-later",
-    "version": "6.5.4",
+    "version": "6.5.5",
     "type": "project",
 
     "authors": [
@@ -13,7 +13,6 @@
         }
     ],
     "require": {
-        "barryvdh/laravel-dompdf": "^1.0"
     },
     "autoload": {
         "psr-4": {
