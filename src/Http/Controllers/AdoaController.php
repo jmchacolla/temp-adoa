@@ -426,27 +426,8 @@ class AdoaController extends Controller
             //Getting Agency Information from meta data
             if (empty($request->input('filterAgency'))) {
                 $agencies = explode(',', Auth::user()->meta->agency);
-                $agenciesArray = array();
-
-                if (count($agencies) == 1 && $agencies[0] == 'ALL') {
-                    $flagAgency = 0;
-                } else {
-                    foreach($agencies as $agency) {
-                        $agenciesArray[] = $agency;
-                    }
-                    $agenciesArray[] = Auth::user()->meta->agency;
-                    $flagAgency = 1;
-                }
             } else {
-                $agenciesArray = $request->input('filterAgency');
-                $agencies = explode(',', Auth::user()->meta->agency);
-
-                if (count($agencies) == 1 && $agencies[0] == 'ALL') {
-                    $agenciesArray[] = $agencies[0];
-                } else {
-                    $agenciesArray[] = Auth::user()->meta->agency;
-                }
-                $flagAgency = 1;
+                $agencies = $request->input('filterAgency');
             }
 
             //Getting Agency Information from meta data
@@ -465,19 +446,8 @@ class AdoaController extends Controller
             //Getting Agency Information from meta data
             if (empty($request->input('filterLevel'))) {
                 $levels = explode(',', Auth::user()->meta->employee_process_level);
-                $levelsArray = array();
-
-                if (count($levels) == 1 && $levels[0] == 'ALL') {
-                    $flagLevel = 0;
-                } else {
-                    foreach($levels as $level) {
-                        $levelsArray[] = $level;
-                    }
-                    $flagLevel = 1;
-                }
             } else {
-                $levelsArray = $request->input('filterLevel');
-                $flagLevel = 1;
+                $levels = $request->input('filterLevel');
             }
 
             //Query to get requests for agency admin
@@ -509,20 +479,32 @@ class AdoaController extends Controller
                 ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
                 ->whereNotIn('processes.process_category_id', [1, 2]);
 
-            if ($flagAgency == 1) {
-                $adoaListRequestsAgency = $adoaListRequestsAgency
-                    ->whereIn('users.meta->agency', $agenciesArray);
+            $positions = $this->getAdoaPositionsByFilter($agencies);
+            $allPositions = array();
+
+            while ($positions->next != null) {
+                $allPositions = array_merge($allPositions, $positions->rows);
+                $positions = $this->getAdoaPositionsByFilter($agencies, $levels, $positions->next);
+                if($positions->next == null) {
+                    $allPositions = array_merge($allPositions, $positions->rows);
                 }
+            };
+
+            $positionsArray = array();
+
+            foreach ($allPositions as $position) {
+                $positionsArray[] = $position[0];
+            }
+
+            if (count($positionsArray) > 0) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->whereIn('process_requests.data->EMA_EMPLOYEE_POSITION_NUMBER', $positionsArray)
+                    ->orWhereIn('process_requests.data->ADOA_RWA_POSITION', $positionsArray);
+            }
 
             if ($flagProcess == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
                     ->whereIn('process_requests.process_id', $processesArray);
-            }
-
-            if ($flagLevel == 1) {
-                $adoaListRequestsAgency = $adoaListRequestsAgency
-                    ->whereIn('users.meta->process_level', $levelsArray)
-                    ->orWhereIn('users.meta->employee_process_level', $levelsArray);
             }
 
             if (!empty($request->input('filterInitDate'))) {
@@ -712,5 +694,42 @@ class AdoaController extends Controller
     public function getRequestsUnassigned() {
         $unasiggnedRequests = DB::select(DB::raw("SELECT id FROM process_requests AS table2 WHERE status = 'ACTIVE' AND id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
         return $unasiggnedRequests;
+    }
+
+    public function getAdoaPositionsByFilter($agencies = '', $processLevels = '', $next = '')
+    {
+        try {
+            $adoaHeaders = array(
+                "Accept: application/json",
+                "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
+            );
+
+            $query = '';
+            if (!empty($agencies) && $agencies[0] != 'ALL') {
+                $query .= '&AGENCY__in=' . implode(", ", $agencies);
+            }
+            if (!empty($processLevels) && $processLevels[0] != 'ALL') {
+                $query .= '&PROCESS_LEVEL__in=' . implode(", ", $processLevels);
+            }
+            if (!empty($next)) {
+                $query .= '&_next=' . $next;
+            }
+
+            $url = EnvironmentVariable::whereName('base_url_api_adoa')->first()->value . 'position.json?_sort=POSITION' . $query;
+            $curl = curl_init($url);
+            curl_setopt($curl, CURLOPT_URL, $url);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $adoaHeaders);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
+            $resp = curl_exec($curl);
+            curl_close($curl);
+
+            $positionInformationList = json_decode($resp);
+            return $positionInformationList;
+        } catch (Exception $error) {
+            return $response['error'] = 'There are errors in the Function: getAdoaPositionsByFilter ' . $error->getMessage();
+        }
     }
 }
