@@ -479,27 +479,19 @@ class AdoaController extends Controller
                 ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
                 ->whereNotIn('processes.process_category_id', [1, 2]);
 
-            $positions = $this->getAdoaPositionsByFilter($agencies);
-            $allPositions = array();
-
-            while ($positions->next != null) {
-                $allPositions = array_merge($allPositions, $positions->rows);
-                $positions = $this->getAdoaPositionsByFilter($agencies, $levels, $positions->next);
-                if($positions->next == null) {
-                    $allPositions = array_merge($allPositions, $positions->rows);
-                }
-            };
-
             $positionsArray = array();
+            if ($agencies[0] != 'ALL' || $levels[0] != 'ALL') {
+                $positions = $this->getAdoaPositionsByFilter($agencies, $levels);
 
-            foreach ($allPositions as $position) {
-                $positionsArray[] = $position[0];
+                foreach ($positions->rows as $position) {
+                    $positionsArray[] = $position[0];
+                }
             }
 
             if (count($positionsArray) > 0) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
                     ->whereIn('process_requests.data->EMA_EMPLOYEE_POSITION_NUMBER', $positionsArray)
-                    ->orWhereIn('process_requests.data->ADOA_RWA_POSITION', $positionsArray);
+                    ->orWhereIn('process_requests.data->CON_EMPLOYEE_POSITION_NUMBER', $positionsArray);
             }
 
             if ($flagProcess == 1) {
@@ -706,16 +698,16 @@ class AdoaController extends Controller
 
             $query = '';
             if (!empty($agencies) && $agencies[0] != 'ALL') {
-                $query .= '&AGENCY__in=' . implode(", ", $agencies);
+                $query .= '&AGENCY__in=' . implode(",", $agencies);
             }
             if (!empty($processLevels) && $processLevels[0] != 'ALL') {
-                $query .= '&PROCESS_LEVEL__in=' . implode(", ", $processLevels);
+                $query .= '&PROCESS_LEVEL__in=' . implode(",", $processLevels);
             }
             if (!empty($next)) {
                 $query .= '&_next=' . $next;
             }
 
-            $url = EnvironmentVariable::whereName('base_url_api_adoa')->first()->value . 'position.json?_sort=POSITION' . $query;
+            $url = EnvironmentVariable::whereName('base_url_api_adoa')->first()->value . 'position.json?_sort=POSITION' . $query . '&_size=max';
             $curl = curl_init($url);
             curl_setopt($curl, CURLOPT_URL, $url);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
