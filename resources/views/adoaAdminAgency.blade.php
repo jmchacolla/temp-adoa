@@ -462,11 +462,6 @@
                         return value;
                     }
                 });
-                /*if ($('#filterLevel').val() == '') {
-                    $('#filterLevel').prop('disabled', true);
-                } else {
-                    $('#filterLevel').prop('disabled', false);
-                }*/
             } else {
                 $('#filterLevel').val('').trigger('change');
                 $('#filterLevel').prop('disabled', true);
