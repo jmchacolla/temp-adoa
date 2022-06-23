@@ -490,8 +490,11 @@ class AdoaController extends Controller
 
             if (count($positionsArray) > 0) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
-                    ->whereIn('process_requests.data->EMA_EMPLOYEE_POSITION_NUMBER', $positionsArray)
-                    ->orWhereIn('process_requests.data->CON_EMPLOYEE_POSITION_NUMBER', $positionsArray);
+                ->whereIn(function ($query) {
+                    $query->whereIn('process_requests.data->EMA_EMPLOYEE_POSITION_NUMBER', $positionsArray)
+                        ->orWhereIn('process_requests.data->CON_EMPLOYEE_POSITION_NUMBER', $positionsArray)
+                        ->orWhereIn('process_requests.data->EMPLOYEE_POSITION_NUMBER', $positionsArray);
+                });
             }
 
             if ($flagProcess == 1) {
