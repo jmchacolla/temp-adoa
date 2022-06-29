@@ -492,7 +492,8 @@ class AdoaController extends Controller
                 $adoaListRequestsAgency = $adoaListRequestsAgency
                 ->whereIn('process_requests.data->EMA_EMPLOYEE_POSITION_NUMBER', $positionsArray)
                 ->orWhereIn('process_requests.data->CON_EMPLOYEE_POSITION_NUMBER', $positionsArray)
-                ->orWhereIn('process_requests.data->EMPLOYEE_POSITION_NUMBER', $positionsArray);
+                ->orWhereIn('process_requests.data->EMPLOYEE_POSITION_NUMBER', $positionsArray)
+                ->orWhereIn('process_requests.data->ADOA_RWA_POSITION', $positionsArray);
             }
 
             if ($flagProcess == 1) {
@@ -604,8 +605,8 @@ class AdoaController extends Controller
                                 if ((empty($request->ema_employee_ein) && empty($request->con_employee_ein)) && $request->request_status == 'COMPLETED') {
                                 } else {
                                     $userOwnerTask = $this->getUserById($request->user_id_task);
-                                    $request->firstname = $userOwnerTask->firstname;
-                                    $request->lastname = $userOwnerTask->lastname;
+                                    $request->firstname = !empty($userOwnerTask->firstname) ? $userOwnerTask->firstname : '';
+                                    $request->lastname = !empty($userOwnerTask->lastname) ? $userOwnerTask->lastname : '';
 
                                     $employeeName = '';
                                     $employeeEin = '';
