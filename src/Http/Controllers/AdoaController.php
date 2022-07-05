@@ -493,7 +493,8 @@ class AdoaController extends Controller
                 ->whereIn('process_requests.data->EMA_EMPLOYEE_POSITION_NUMBER', $positionsArray)
                 ->orWhereIn('process_requests.data->CON_EMPLOYEE_POSITION_NUMBER', $positionsArray)
                 ->orWhereIn('process_requests.data->EMPLOYEE_POSITION_NUMBER', $positionsArray)
-                ->orWhereIn('process_requests.data->ADOA_RWA_POSITION', $positionsArray);
+                ->orWhereIn('process_requests.data->ADOA_RWA_POSITION', $positionsArray)
+                ->orWhereIn('process_requests.data->ADOA_TA_POSITION', $positionsArray);
             }
 
             if ($flagProcess == 1) {
