@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use URL;
 use DB;
 use Auth;
+use Illuminate\Support\Facades\Mail;
 
 class AdoaController extends Controller
 {
@@ -662,9 +663,9 @@ class AdoaController extends Controller
 
     public function getValidAgreement($collectionId) {
         $date = date('m/d/Y');
-        $range = date('m/d/Y', strtotime($date . ' +20 day'));
+        $reminder2Weeks = date("m/d/Y", strtotime($date . "+ 2 week"));
 
-        $validAgreements = DB::table('collection_' . $collectionId)
+        $reminders = DB::table('collection_' . $collectionId)
             ->select('id',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_START_DATE as ADOA_RWA_REMOTE_AGREEMENT_START_DATE',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE as ADOA_RWA_REMOTE_AGREEMENT_END_DATE',
@@ -674,16 +675,28 @@ class AdoaController extends Controller
                 'data->ADOA_RWA_POSITION as ADOA_RWA_POSITION',
                 'data->ADOA_RWA_EMPLOYEE_EMAIL as ADOA_RWA_EMPLOYEE_EMAIL')
             ->where('data->ADOA_RWA_REMOTE_AGREEMENT_VALID', 'Y')
+            ->where('data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE', $reminder2Weeks)
             ->get();
 
-        $finalValidAgreements = array();
-        foreach ($validAgreements as $agreement) {
-            $endAgreement = date('m/d/Y', strtotime($agreement->ADOA_RWA_REMOTE_AGREEMENT_END_DATE));
-            if (strtotime($endAgreement) < strtotime($range)) {
-                $finalValidAgreements[] = $agreement;
-            }
-        }
-        return $finalValidAgreements;
+        $expirated1Day = date("m/d/Y", strtotime($date . "- 1 day"));
+
+        $expirated = DB::table('collection_' . $collectionId)
+            ->select('id',
+                'data->ADOA_RWA_REMOTE_AGREEMENT_START_DATE as ADOA_RWA_REMOTE_AGREEMENT_START_DATE',
+                'data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE as ADOA_RWA_REMOTE_AGREEMENT_END_DATE',
+                'data->REQUEST_ID as REQUEST_ID',
+                'data->ADOA_RWA_REMOTE_AGREEMENT_VALID as ADOA_RWA_REMOTE_AGREEMENT_VALID',
+                'data->USER_ID as USER_ID',
+                'data->ADOA_RWA_POSITION as ADOA_RWA_POSITION',
+                'data->ADOA_RWA_EMPLOYEE_EMAIL as ADOA_RWA_EMPLOYEE_EMAIL')
+            ->where('data->ADOA_RWA_REMOTE_AGREEMENT_VALID', 'Y')
+            ->where('data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE', $expirated1Day)
+            ->get();
+
+        return [
+            'reminders' => $reminders,
+            'expirated' => $expirated
+        ];
     }
 
     public function getRequestsUnassigned() {
