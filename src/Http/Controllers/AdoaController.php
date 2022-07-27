@@ -667,6 +667,8 @@ class AdoaController extends Controller
 
         $reminders = DB::table('collection_' . $collectionId)
             ->select('id',
+                'data->EMPLOYEE_FIRST_NAME as EMPLOYEE_FIRST_NAME',
+                'data->EMPLOYEE_LAST_NAME as EMPLOYEE_LAST_NAME',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_START_DATE as ADOA_RWA_REMOTE_AGREEMENT_START_DATE',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE as ADOA_RWA_REMOTE_AGREEMENT_END_DATE',
                 'data->REQUEST_ID as REQUEST_ID',
@@ -682,6 +684,8 @@ class AdoaController extends Controller
 
         $expirated = DB::table('collection_' . $collectionId)
             ->select('id',
+                'data->EMPLOYEE_FIRST_NAME as EMPLOYEE_FIRST_NAME',
+                'data->EMPLOYEE_LAST_NAME as EMPLOYEE_LAST_NAME',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_START_DATE as ADOA_RWA_REMOTE_AGREEMENT_START_DATE',
                 'data->ADOA_RWA_REMOTE_AGREEMENT_END_DATE as ADOA_RWA_REMOTE_AGREEMENT_END_DATE',
                 'data->REQUEST_ID as REQUEST_ID',
