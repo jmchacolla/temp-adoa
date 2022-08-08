@@ -704,8 +704,18 @@ class AdoaController extends Controller
     }
 
     public function getRequestsUnassigned() {
-        $unasiggnedRequests = DB::select(DB::raw("SELECT id FROM process_requests AS table2 WHERE status = 'ACTIVE' AND id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
-        return $unasiggnedRequests;
+        $unasiggnedRequestsPart1 = DB::select(DB::raw("SELECT id FROM process_requests AS table2 WHERE status = 'ACTIVE' AND id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
+
+        $unasiggnedRequestsPart2 = DB::table('process_request_tokens')
+            ->join('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
+            ->select('process_request_tokens.process_request_id')
+            ->where('process_requests.status', 'ACTIVE')
+            ->where('process_request_tokens.element_type', 'gateway')
+            ->where('process_request_tokens.status', 'INCOMING')
+            ->groupBy('process_request_tokens.process_request_id')
+            ->get();
+
+        return array_merge($unasiggnedRequestsPart1, $unasiggnedRequestsPart2);
     }
 
     public function getAdoaPositionsByFilter($agencies = '', $processLevels = '', $next = '')
