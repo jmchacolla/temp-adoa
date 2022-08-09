@@ -708,12 +708,13 @@ class AdoaController extends Controller
 
         $unasiggnedRequestsPart2 = DB::table('process_request_tokens')
             ->join('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
-            ->select('process_request_tokens.process_request_id')
+            ->select('process_request_tokens.process_request_id as id')
             ->where('process_requests.status', 'ACTIVE')
             ->where('process_request_tokens.element_type', 'gateway')
             ->where('process_request_tokens.status', 'INCOMING')
             ->groupBy('process_request_tokens.process_request_id')
-            ->get();
+            ->get()
+            ->toArray();
 
         return array_merge($unasiggnedRequestsPart1, $unasiggnedRequestsPart2);
     }
