@@ -117,7 +117,7 @@ class AdoaController extends Controller
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
             ->where(function ($query) {
                 $query->where('process_requests.user_id', Auth::user()->id)
-                    ->orWhere('process_requests.data->TA_USER_ID', Auth::user()->id);
+                    ->orWhere('process_requests.TA_USER_ID', Auth::user()->id);
             })
             ->whereIn('process_request_tokens.id', function($query) {
                 $query->selectRaw('max(id)')
