@@ -90,9 +90,9 @@ $(document).ready(function () {
         }, 10);
     }
 
-    $("ul.navbar-nav.d-flex.align-items-center.ml-auto").find("button").eq(1).click(function() {
+    $(".avatar-image-button rounded-circle bg-warning border-0 align-middle text-white text-center text-uppercase text-nowrap").click(function() {
         setTimeout(function(){
-            $('li:contains("Files")').hide();
+            $("li:contains('Files')").hide();
         }, 100);
     });
 });
