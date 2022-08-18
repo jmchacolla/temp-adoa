@@ -91,44 +91,83 @@ class AdoaController extends Controller
     }
 
     public function getListRequests() {
-        $adoaListRequests = DB::table('process_request_tokens')
-            ->leftJoin('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
-            ->leftJoin('media', 'process_request_tokens.process_request_id', '=', 'media.model_id')
-            ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
-            ->join('processes', 'process_request_tokens.process_id', '=', 'processes.id')
-            ->select('process_request_tokens.id AS task_id',
-                'process_request_tokens.element_name',
-                'process_request_tokens.element_type',
-                'process_request_tokens.process_request_id as request_id',
-                'process_request_tokens.status as task_status',
+        $adoaListRequests = DB::table('process_requests')
+            ->join('processes', 'process_requests.process_id', '=', 'processes.id')
+            ->select('process_requests.id as request_id',
                 'process_requests.process_id',
                 'process_requests.name',
                 'process_requests.status as request_status',
                 'process_requests.data',
                 'process_requests.created_at',
-                'process_requests.completed_at',
-                'media.id AS file_id',
-                'media.custom_properties',
-                'users.firstname',
-                'users.lastname',
-                'process_request_tokens.user_id as user_id')
-            ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
+                'process_requests.completed_at')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
-            ->where(function ($query) {
-                $query->where('process_requests.user_id', Auth::user()->id)
-                    ->orWhere('process_requests.TA_USER_ID', Auth::user()->id);
-            })
-            ->whereIn('process_request_tokens.id', function($query) {
-                $query->selectRaw('max(id)')
-                    ->from('process_request_tokens')
-                    ->groupBy('process_request_id')
-                    ->groupBy('element_name');
-            })
-            ->orderBy('process_request_tokens.process_request_id', 'desc')
+            ->where('process_requests.user_id', Auth::user()->id)
+            ->orderBy('process_requests.id', 'desc')
             ->get();
 
-        return view('adoa::adoaListRequests', ['adoaListRequests' => $adoaListRequests, 'process_id_terminate_rwa_send_email_and_pdf' => EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value]);
+        $finalRequestList = array();
+        foreach ($adoaListRequests as $request) {
+            if($request->request_status == 'ACTIVE') {
+                $listRequestTokens = DB::table('process_request_tokens')
+                    ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
+                    ->select('process_request_tokens.id as task_id',
+                        'process_request_tokens.element_name',
+                        'process_request_tokens.element_type',
+                        'process_request_tokens.status as task_status',
+                        'process_request_tokens.user_id as user_id',
+                        'users.firstname',
+                        'users.lastname')
+                    ->where('process_request_tokens.process_request_id', $request->request_id)
+                    ->where('process_request_tokens.status', 'ACTIVE')
+                    ->get();
+                
+                if (count($listRequestTokens) > 0) {
+                    foreach ($listRequestTokens as $requestToken) {
+                        $request->file_id = null;
+                        $request->custom_properties = null;
+                        $request = (object) array_merge((array) $request, (array) $requestToken);
+                    }
+                } else {
+                    $request->task_id = null;
+                    $request->element_name = null;
+                    $request->element_type = null;
+                    $request->task_status = 'ACTIVE';
+                    $request->user_id = null;
+                    $request->firstname = null;
+                    $request->lastname = null;
+                    $request->file_id = null;
+                    $request->custom_properties = null;
+                }
+                $finalRequestList[] = $request;
+            } else {
+                $listRequestTokens = DB::table('media')
+                    ->select('id AS file_id',
+                        'custom_properties')
+                    ->where('model_id', $request->request_id)
+                    ->where('custom_properties->createdBy', 'null')
+                    ->get();
+
+                $request->task_id = null;
+                $request->element_name = 'Completed';
+                $request->element_type = null;
+                $request->task_status = 'COMPLETED';
+                $request->user_id = null;
+                $request->firstname = null;
+                $request->lastname = null;
+
+                if (count($listRequestTokens) == 0) {
+                    $request->file_id = null;
+                    $request->custom_properties = null;
+                } else {
+                    $request->file_id = $listRequestTokens[0]->file_id;
+                    $request->custom_properties = $listRequestTokens[0]->custom_properties;
+                }
+                $finalRequestList[] = $request;
+            }
+        }
+
+        return view('adoa::adoaListRequests', ['adoaListRequests' => $finalRequestList, 'process_id_terminate_rwa_send_email_and_pdf' => EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value]);
     }
 
     public function getListRequestsAgency($groupId) {
@@ -452,33 +491,22 @@ class AdoaController extends Controller
             }
 
             //Query to get requests for agency admin
-            $adoaListRequestsAgency = DB::table('process_request_tokens')
-                ->leftJoin('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
-                ->leftJoin('media', 'process_request_tokens.process_request_id', '=', 'media.model_id')
-                ->leftJoin('users', 'process_requests.user_id', '=', 'users.id')
-                ->join('processes', 'process_request_tokens.process_id', '=', 'processes.id')
-                ->select('process_request_tokens.id AS task_id',
-                    'process_requests.process_id',
-                    'process_request_tokens.element_name',
-                    'process_request_tokens.element_type',
-                    'process_request_tokens.process_request_id as request_id',
-                    'process_request_tokens.status as task_status',
-                    'process_requests.name',
-                    'process_requests.status as request_status',
-                    'process_requests.data->EMA_EMPLOYEE_FIRST_NAME as ema_employee_first_name',
-                    'process_requests.data->EMA_EMPLOYEE_LAST_NAME as ema_employee_last_name',
-                    'process_requests.data->EMA_EMPLOYEE_EIN as ema_employee_ein',
-                    'process_requests.data->CON_EMPLOYEE_FIRST_NAME as con_employee_first_name',
-                    'process_requests.data->CON_EMPLOYEE_LAST_NAME as con_employee_last_name',
-                    'process_requests.data->CON_EMPLOYEE_EIN as con_employee_ein',
-                    'process_requests.data->FA_OWNER as FA_OWNER',
-                    'process_requests.created_at',
-                    'process_requests.completed_at',
-                    'media.id AS file_id',
-                    'media.custom_properties',
-                    'process_request_tokens.user_id as user_id_task')
-                ->whereIn('process_request_tokens.element_type', ['task', 'end_event'])
-                ->whereNotIn('processes.process_category_id', [1, 2]);
+            $adoaListRequestsAgency = DB::table('process_requests')
+            ->join('processes', 'process_requests.process_id', '=', 'processes.id')
+            ->select('process_requests.id as request_id',
+                'process_requests.process_id',
+                'process_requests.name',
+                'process_requests.status as request_status',
+                'process_requests.data->EMA_EMPLOYEE_FIRST_NAME as ema_employee_first_name',
+                'process_requests.data->EMA_EMPLOYEE_LAST_NAME as ema_employee_last_name',
+                'process_requests.data->EMA_EMPLOYEE_EIN as ema_employee_ein',
+                'process_requests.data->CON_EMPLOYEE_FIRST_NAME as con_employee_first_name',
+                'process_requests.data->CON_EMPLOYEE_LAST_NAME as con_employee_last_name',
+                'process_requests.data->CON_EMPLOYEE_EIN as con_employee_ein',
+                'process_requests.data->FA_OWNER as FA_OWNER',
+                'process_requests.created_at',
+                'process_requests.completed_at')
+            ->whereNotIn('processes.process_category_id', [1, 2]);
 
             $positionsArray = array();
             if ($agencies[0] != 'ALL' || $levels[0] != 'ALL') {
@@ -522,23 +550,73 @@ class AdoaController extends Controller
             }
 
             $adoaListRequestsAgency = $adoaListRequestsAgency
-                ->whereIn('process_request_tokens.id', function($query) {
-                    $query->selectRaw('max(id) as id')
-                        ->from('process_request_tokens')
-                        ->groupBy('id');
-                })
                 ->orderBy('process_requests.id', 'desc')
                 ->get()
-                ->unique('task_id');
+                ->unique('request_id');
+
+            $finalRequestList = array();
+            foreach ($adoaListRequestsAgency as $request) {
+                if($request->request_status == 'ACTIVE') {
+                    $listRequestTokens = DB::table('process_request_tokens')
+                        ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
+                        ->select('process_request_tokens.id as task_id',
+                            'process_request_tokens.element_name',
+                            'process_request_tokens.element_type',
+                            'process_request_tokens.status as task_status',
+                            'process_request_tokens.user_id as user_id_task')
+                        ->where('process_request_tokens.process_request_id', $request->request_id)
+                        ->where('process_request_tokens.status', 'ACTIVE')
+                        ->get();
+                    
+                    if (count($listRequestTokens) > 0) {
+                        foreach ($listRequestTokens as $requestToken) {
+                            $request->file_id = null;
+                            $request->custom_properties = null;
+                            $request = (object) array_merge((array) $request, (array) $requestToken);
+                        }
+                    } else {
+                        $request->task_id = null;
+                        $request->element_name = null;
+                        $request->element_type = null;
+                        $request->task_status = 'ACTIVE';
+                        $request->user_id_task = null;
+                        $request->file_id = null;
+                        $request->custom_properties = null;
+                    }
+                    $finalRequestList[] = $request;
+                } else {
+                    $listRequestTokens = DB::table('media')
+                        ->select('id AS file_id',
+                            'custom_properties')
+                        ->where('model_id', $request->request_id)
+                        ->where('custom_properties->createdBy', 'null')
+                        ->get();
+    
+                    $request->task_id = null;
+                    $request->element_name = 'Completed';
+                    $request->element_type = null;
+                    $request->task_status = 'COMPLETED';
+                    $request->user_id_task = null;
+    
+                    if (count($listRequestTokens) == 0) {
+                        $request->file_id = null;
+                        $request->custom_properties = null;
+                    } else {
+                        $request->file_id = $listRequestTokens[0]->file_id;
+                        $request->custom_properties = $listRequestTokens[0]->custom_properties;
+                    }
+                    $finalRequestList[] = $request;
+                }
+            }
 
             $process_id_terminate_rwa_send_email_and_pdf = EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value;
-            $count = count($adoaListRequestsAgency);
+            $count = count($finalRequestList);
 
             $dataTableFormat = array();
             $dataTable = array();
 
             if ($count > 0) {
-                foreach ($adoaListRequestsAgency as $request) {
+                foreach ($finalRequestList as $request) {
                     if ($request->name != 'Email Notification Sub Process') {
                         $createdDate = $request->created_at;
                         $newCreatedDate = new \DateTime($createdDate);
@@ -557,94 +635,89 @@ class AdoaController extends Controller
                             $newCustomProperties = json_decode($customProperties);
                         }
 
-                        if (($request->element_type == 'task' && $request->task_status == 'ACTIVE') || ($request->element_type == 'end_event' && $request->task_status == 'CLOSED' && $request->element_name == 'Completed' && $request->request_status == 'COMPLETED')) {
-                            if (!empty($request->file_id) || !is_null($request->file_id)) {
-                                $employeeName = '';
-                                $employeeEin = '';
-                                if (is_null($newCustomProperties->createdBy)) {
-                                    if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) {
-                                        $dataName = $newCustomProperties->data_name;
-                                        $nameFile = explode('_', $dataName);
-                                        if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile)) {
-                                            $employeeName = $nameFile[3] . ' ' . $nameFile[4];
-                                        }
-                                    } else {
-                                        if (!empty($request->ema_employee_first_name)) {
-                                            $employeeName = $request->ema_employee_first_name . ' ' . $request->ema_employee_last_name;
-                                        } elseif (!empty($request->con_employee_first_name)) {
-                                            $employeeName = $request->con_employee_first_name . ' ' . $request->con_employee_last_name;
-                                        }
+                        if ($request->task_status == 'COMPLETED' && (!empty($request->file_id) || !is_null($request->file_id))) {
+                            $employeeName = '';
+                            $employeeEin = '';
+                            if (is_null($newCustomProperties->createdBy)) {
+                                if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) {
+                                    $dataName = $newCustomProperties->data_name;
+                                    $nameFile = explode('_', $dataName);
+                                    if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile)) {
+                                        $employeeName = $nameFile[3] . ' ' . $nameFile[4];
                                     }
-
-                                    if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) {
-                                        if (array_key_exists(5, $nameFile)) {
-                                            $employeeEin = $nameFile[5];
-                                        }
-                                    } else {
-                                        if (!empty($request->ema_employee_ein)) {
-                                            $employeeEin = $request->ema_employee_ein;
-                                        } elseif (!empty($request->con_employee_ein)) {
-                                            $employeeEin = $request->con_employee_ein;
-                                        }
-                                    }
-
-                                    $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="/request/' . $request->request_id . '/files/' . $request->file_id . '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
-
-                                    $dataTable[] = [
-                                        'request_id' => $request->request_id,
-                                        'process_name' => $request->process_id == $process_id_terminate_rwa_send_email_and_pdf ? 'Remote Work - Terminate Agreement' : $request->name,
-                                        'employee_name' => $employeeName,
-                                        'employee_ein' => $employeeEin,
-                                        'started' => $newCreatedDate->format('m/d/Y h:i:s A'),
-                                        'completed' => $newCompletedDateFormat,
-                                        'current_task' => '',
-                                        'current_user' => '',
-                                        'status' => $request->request_status,
-                                        'options' => $options
-                                    ];
-                                }
-                            } else {
-                                if ((empty($request->ema_employee_ein) && empty($request->con_employee_ein)) && $request->request_status == 'COMPLETED') {
                                 } else {
-                                    $userOwnerTask = $this->getUserById($request->user_id_task);
-                                    $request->firstname = !empty($userOwnerTask->firstname) ? $userOwnerTask->firstname : '';
-                                    $request->lastname = !empty($userOwnerTask->lastname) ? $userOwnerTask->lastname : '';
-
-                                    $employeeName = '';
-                                    $employeeEin = '';
-                                    if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf) {
-                                        if (!empty($request->ema_employee_first_name)) {
-                                            $employeeName = $request->ema_employee_first_name . ' ' . $request->ema_employee_last_name;
-                                        } elseif (!empty($request->con_employee_first_name)) {
-                                            $employeeName = $request->con_employee_first_name . ' ' . $request->con_employee_last_name;
-                                        }
-                                        if (!empty($request->ema_employee_ein)) {
-                                            $employeeEin = $request->ema_employee_ein;
-                                        } elseif (!empty($request->con_employee_ein)) {
-                                            $employeeEin = $request->con_employee_ein;
-                                        }
+                                    if (!empty($request->ema_employee_first_name)) {
+                                        $employeeName = $request->ema_employee_first_name . ' ' . $request->ema_employee_last_name;
+                                    } elseif (!empty($request->con_employee_first_name)) {
+                                        $employeeName = $request->con_employee_first_name . ' ' . $request->con_employee_last_name;
                                     }
+                                }
 
-                                    $options = '';
-                                    if ($request->request_status != 'COMPLETED') {
-                                        $options .= '<a href="#"><i class="fas fa-people-arrows" style="color: #71A2D4;" title="Reassign Request" onclick="reassign(' . $request->request_id . ', ' . $request->task_id . ');"></i></a>&nbsp;';
+                                if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) {
+                                    if (array_key_exists(5, $nameFile)) {
+                                        $employeeEin = $nameFile[5];
                                     }
-                                    $options .= '&nbsp;<a href="/requests/' . $request->request_id . '"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>';
+                                } else {
+                                    if (!empty($request->ema_employee_ein)) {
+                                        $employeeEin = $request->ema_employee_ein;
+                                    } elseif (!empty($request->con_employee_ein)) {
+                                        $employeeEin = $request->con_employee_ein;
+                                    }
+                                }
 
-                                    $dataTable[] = [
-                                        'request_id' => $request->request_id,
-                                        'process_name' => $request->process_id == $process_id_terminate_rwa_send_email_and_pdf ? 'Remote Work - Terminate Agreement' : $request->name,
-                                        'employee_name' => $employeeName,
-                                        'employee_ein' => $employeeEin,
-                                        'started' => $newCreatedDate->format('m/d/Y h:i:s A'),
-                                        'completed' => $newCompletedDateFormat,
-                                        'current_task' => $request->element_name,
-                                        'current_user' => $request->firstname . ' ' . $request->lastname,
-                                        'status' => $request->request_status,
-                                        'options' => $options
-                                    ];
+                                $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="/request/' . $request->request_id . '/files/' . $request->file_id . '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+
+                                $dataTable[] = [
+                                    'request_id' => $request->request_id,
+                                    'process_name' => $request->process_id == $process_id_terminate_rwa_send_email_and_pdf ? 'Remote Work - Terminate Agreement' : $request->name,
+                                    'employee_name' => $employeeName,
+                                    'employee_ein' => $employeeEin,
+                                    'started' => $newCreatedDate->format('m/d/Y h:i:s A'),
+                                    'completed' => $newCompletedDateFormat,
+                                    'current_task' => '',
+                                    'current_user' => '',
+                                    'status' => $request->request_status,
+                                    'options' => $options
+                                ];
+                            }
+                        } elseif ($request->task_status == 'ACTIVE') {
+                            $userOwnerTask = $this->getUserById($request->user_id_task);
+                            $request->firstname = !empty($userOwnerTask->firstname) ? $userOwnerTask->firstname : '';
+                            $request->lastname = !empty($userOwnerTask->lastname) ? $userOwnerTask->lastname : '';
+
+                            $employeeName = '';
+                            $employeeEin = '';
+                            if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf) {
+                                if (!empty($request->ema_employee_first_name)) {
+                                    $employeeName = $request->ema_employee_first_name . ' ' . $request->ema_employee_last_name;
+                                } elseif (!empty($request->con_employee_first_name)) {
+                                    $employeeName = $request->con_employee_first_name . ' ' . $request->con_employee_last_name;
+                                }
+                                if (!empty($request->ema_employee_ein)) {
+                                    $employeeEin = $request->ema_employee_ein;
+                                } elseif (!empty($request->con_employee_ein)) {
+                                    $employeeEin = $request->con_employee_ein;
                                 }
                             }
+
+                            $options = '';
+                            if ($request->request_status != 'COMPLETED') {
+                                $options .= '<a href="#"><i class="fas fa-people-arrows" style="color: #71A2D4;" title="Reassign Request" onclick="reassign(' . $request->request_id . ', ' . $request->task_id . ');"></i></a>&nbsp;';
+                            }
+                            $options .= '&nbsp;<a href="/requests/' . $request->request_id . '"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>';
+
+                            $dataTable[] = [
+                                'request_id' => $request->request_id,
+                                'process_name' => $request->process_id == $process_id_terminate_rwa_send_email_and_pdf ? 'Remote Work - Terminate Agreement' : $request->name,
+                                'employee_name' => $employeeName,
+                                'employee_ein' => $employeeEin,
+                                'started' => $newCreatedDate->format('m/d/Y h:i:s A'),
+                                'completed' => $newCompletedDateFormat,
+                                'current_task' => $request->element_name,
+                                'current_user' => $request->firstname . ' ' . $request->lastname,
+                                'status' => $request->request_status,
+                                'options' => $options
+                            ];
                         }
                     }
                 }
