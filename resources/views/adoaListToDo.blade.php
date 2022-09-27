@@ -1,5 +1,5 @@
 
-@extends('layouts.layout')
+@extends('adoa::layouts.layout')
 
 @section('sidebar')
     @include('layouts.sidebar', ['sidebar'=> Menu::get('sidebar_request')])
