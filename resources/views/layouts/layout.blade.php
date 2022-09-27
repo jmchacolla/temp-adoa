@@ -14,6 +14,7 @@
     <meta name="timezone" content="{{ Auth::user()->timezone ?: config('app.timezone') }}">
     @yield('meta')
     @endif
+    <meta http-equiv="Content-Security-Policy" content="script-src * 'unsafe-inline' 'unsafe-eval'; object-src 'self' blob: data:;">
     <meta name="timeout-worker" content="{{ mix('js/timeout.js') }}">
     <meta name="timeout-length" content="{{ Session::has('rememberme') && Session::get('rememberme') ? "Number.MAX_SAFE_INTEGER" : config('session.lifetime') }}">
     <meta name="timeout-warn-seconds" content="{{ config('session.expire_warning') }}">
