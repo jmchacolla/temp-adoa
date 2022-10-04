@@ -196,6 +196,7 @@
         </script>
 
         <script>
+            $(".skip-navigation.alert.alert-info").hide();
             var app = new Vue({
                 el: '#app',
 
