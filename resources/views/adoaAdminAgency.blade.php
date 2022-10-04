@@ -54,46 +54,63 @@
 <div class="container"  style="margin:10px;">
     <div class="card col-lg-12 col-md-12 col-sm-12">
         <div class="" style="text-align:left;padding-top:5px;">
-            <h4 class="">Criteria of Search</h4>
-        </div>
-        <div class="row">
-            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                <label for="filterInitDate" style="padding:5px; font-size: 13px">From (Request Started)</label>
-                <input type="date" class="form-control" id="filterInitDate">
-            </div>
-            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                <label for="filterEndDate"  style="padding:5px; font-size: 13px">To (Request Started)</label>
-                <input type="date" class="form-control" id="filterEndDate">
-            </div>
-            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                <label for="filterAgency"  style="padding:5px; font-size: 13px">Agency</label>
-                <select id="filterAgency" class="select2 form-control">
-                    @foreach ($agenciesArray as $agency)
-                    <option value="{{ $agency }}">{{ $agency }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                <label for="filterLevel"  style="padding:5px; font-size: 13px">Process Level</label>
-                <select id="filterLevel" class="select2 form-control">
-                    @foreach ($levelsArray as $level)
-                    <option value="{{ $level }}">{{ $level }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                <label for="filterStatus"  style="padding:5px; font-size: 13px">Status</label>
-                <select id="filterStatus" class="select2 form-control">
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="COMPLETED">COMPLETED</option>
-                </select>
+            <h4 class="">Search Criteria</h4>
+            <div style="color: red">
+                <i>
+                    <strong>NOTE:</strong>  The maximum search range is 30 days. Select the “From Date” first, and adjust the “To Date” as needed.
+                </i>
             </div>
         </div>
-        <div class="row">
-            <div class="form-group col col-lg-3 col-md-3 col-sm-12">
-                <button id="btnGetList" class="btn btn-primary btn-sm"  @click="getAppraisalList">Get List</button>
+        <br>
+        <form class="needs-validation" novalidate>
+            <div class="row">
+                <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                    <label for="filterInitDate" style="padding:5px; font-size: 13px">From (Request Started)<strong><span style="color: red; font-size: 15px">*</span></strong></label>
+                    <input type="date" class="form-control" id="filterInitDate" onchange="rangeDates()" max="{!! date('Y-m-d') !!}" required>
+                    <div class="invalid-feedback">
+                        Please choose a date.
+                    </div>
+                </div>
+                <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                    <label for="filterEndDate"  style="padding:5px; font-size: 13px">To (Request Started)<strong><span style="color: red; font-size: 15px">*</span></strong></label>
+                    <input type="date" class="form-control" id="filterEndDate" onchange="rangeDates()" max="{!! date('Y-m-d') !!}" required>
+                    <div class="invalid-feedback">
+                        Please choose a date.
+                    </div>
+                </div>
+                <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                    <label for="filterAgency"  style="padding:5px; font-size: 13px">Agency<strong><span style="color: red; font-size: 15px">*</span></strong></label>
+                    <select id="filterAgency" class="select2 form-control" required>
+                        @foreach ($agenciesArray as $agency)
+                        <option value="{{ $agency }}">{{ $agency }}</option>
+                        @endforeach
+                    </select>
+                    <div class="invalid-feedback">
+                        Please select at least one Agency.
+                    </div>
+                </div>
+                <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                    <label for="filterLevel"  style="padding:5px; font-size: 13px">Process Level</label>
+                    <select id="filterLevel" class="select2 form-control">
+                        @foreach ($levelsArray as $level)
+                        <option value="{{ $level }}">{{ $level }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                    <label for="filterStatus"  style="padding:5px; font-size: 13px">Status</label>
+                    <select id="filterStatus" class="select2 form-control">
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="COMPLETED">COMPLETED</option>
+                    </select>
+                </div>
             </div>
-        </div>
+            <div class="row">
+                <div class="form-group col col-lg-3 col-md-3 col-sm-12">
+                    <button id="btnGetList" class="btn btn-primary btn-sm" type="submit">Get List</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -177,6 +194,7 @@
     window['define'] = window.temp_define;
 </script>
 <script type="text/javascript">
+    $(".skip-navigation.alert.alert-info").hide();
     $(document).ready( function () {
         $('th').on("click", function (event) {
             if($(event.target).is("input")){
@@ -288,90 +306,6 @@
             }
         });
 
-        $('#btnGetList').click(function() {
-            if ($('#filterAgency').val() != '') {
-                $('#titleAgency').html('');
-                $('#titleAgency').html('Agency ' + $('#filterAgency').val());
-            }
-            var table = $('#listRequestsAgency').DataTable({
-                "initComplete": function () {
-                    count = 0;
-                    this.api().columns().every( function () {
-                        if(this.index() != 0 && this.index() != 9) {
-                            var title = titleTable[this.index()];
-                            //replace spaces with dashes
-                            var column = this;
-                            var select = $('<select id="' + title + '" class="select2"></select>')
-                            .appendTo( $(column.header()).empty() )
-                            .on( 'change', function () {
-                                //Get the "text" property from each selected data
-                                //regex escape the value and store in array
-                                var data = $.map( $(this).select2('data'), function( value, key ) {
-                                    return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
-                                });
-
-                                //if no data selected use ""
-                                if (data.length === 0) {
-                                    data = [""];
-                                }
-
-                                //join array into string with regex or (|)
-                                var val = data.join('|');
-
-                                //search for the option(s) selected
-                                column.search( val ? val : '', true, false ).draw();
-                            });
-
-                            column.data().unique().sort().each(function (d, j) {
-                                if (d != "") {
-                                    select.append( '<option value="' + d + '">' + d + '</option>' );
-                                }
-                            });
-
-                            //use column title as selector and placeholder
-                            $('#' + title).select2({
-                                multiple: true,
-                                closeOnSelect: true,
-                                placeholder: title,
-                                width: '100%'
-                            });
-
-                            $('#listRequestsAgency .select2').val(null).trigger('change');
-                        }
-                    });
-                },
-                "order": [[ 0, "desc" ]],
-                "pageLength": 25,
-                "destroy": true,
-                "ajax": {
-                    "url": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
-                    "type": "GET",
-                    "data": {
-                        "filterInitDate": $("#filterInitDate").val(),
-                        "filterEndDate": $("#filterEndDate").val(),
-                        "filterAgency": $("#filterAgency").val(),
-                        "filterStatus": $("#filterStatus").val(),
-                        "filterLevel": $("#filterLevel").val()
-                    }
-                },
-                "columns": [
-                    {data: 'request_id', className: 'text-left'},
-                    {data: 'process_name', className: 'text-left'},
-                    {data: 'employee_name', className: 'text-left'},
-                    {data: 'employee_ein', className: 'text-left'},
-                    {data: 'started', className: 'text-left'},
-                    {data: 'completed', className: 'text-left'},
-                    {data: 'current_task', className: 'text-left'},
-                    {data: 'current_user', className: 'text-left'},
-                    {data: 'status', className: 'text-left'},
-                    {data: 'options', className: 'text-right'}
-                ],
-                'language':{
-                   "loadingRecords": "<div class='lds-ring'><div></div><div></div><div></div><div></div></div><br>Please wait, we are getting your information"
-                }
-            });
-        });
-
         $('#filterAgency').select2({
             multiple: true,
             closeOnSelect: true,
@@ -473,7 +407,146 @@
                 });
             }
         });
+
+        window.rangeDates = function() {
+            var init = new Date(filterInitDate.value);
+            var end = new Date(filterEndDate.value);
+            var initAux = new Date(filterInitDate.value);
+            var today = new Date();
+
+            init.setDate(init.getDate() + 31);
+
+            if (init > today) {
+                var nd = ("0" + (today.getDate())).slice(-2);
+                var m = ("0" + (today.getMonth() + 1)).slice(-2);
+                var y = today.getFullYear();
+                if (m == 13) {
+                    m = 1;
+                }
+                filterEndDate.max = y + '-' + m + '-' + nd;
+                filterEndDate.min = filterInitDate.value;
+            } else {
+                var nd = ("0" + (init.getDate())).slice(-2);
+                var m = ("0" + (init.getMonth() + 1)).slice(-2);
+                var y = init.getFullYear();
+                if (m == 13) {
+                    m = 1;
+                }
+                filterEndDate.max = y + '-' + m + '-' + nd;
+                filterEndDate.min = filterInitDate.value;
+            }
+
+            if (filterEndDate.value == '') {
+                filterEndDate.value = y + '-' + m + '-' + nd;
+            } else if (end < initAux || init < end) {
+                filterEndDate.value = y + '-' + m + '-' + nd;
+            }
+        }
     });
+
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            var forms = document.getElementsByClassName('needs-validation');
+            // Loop over them and prevent submission
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    } else {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if ($('#filterAgency').val() != '') {
+                            $('#titleAgency').html('');
+                            $('#titleAgency').html('Agency ' + $('#filterAgency').val());
+                        } else {
+                            $('#titleAgency').html('No agency selected');
+                        }
+                        var table = $('#listRequestsAgency').DataTable({
+                            "initComplete": function () {
+                                count = 0;
+                                this.api().columns().every( function () {
+                                    if(this.index() != 0 && this.index() != 9) {
+                                        var title = titleTable[this.index()];
+                                        //replace spaces with dashes
+                                        var column = this;
+                                        var select = $('<select id="' + title + '" class="select2"></select>')
+                                        .appendTo( $(column.header()).empty() )
+                                        .on( 'change', function () {
+                                            //Get the "text" property from each selected data
+                                            //regex escape the value and store in array
+                                            var data = $.map( $(this).select2('data'), function( value, key ) {
+                                                return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
+                                            });
+
+                                            //if no data selected use ""
+                                            if (data.length === 0) {
+                                                data = [""];
+                                            }
+
+                                            //join array into string with regex or (|)
+                                            var val = data.join('|');
+
+                                            //search for the option(s) selected
+                                            column.search( val ? val : '', true, false ).draw();
+                                        });
+
+                                        column.data().unique().sort().each(function (d, j) {
+                                            if (d != "") {
+                                                select.append( '<option value="' + d + '">' + d + '</option>' );
+                                            }
+                                        });
+
+                                        //use column title as selector and placeholder
+                                        $('#' + title).select2({
+                                            multiple: true,
+                                            closeOnSelect: true,
+                                            placeholder: title,
+                                            width: '100%'
+                                        });
+
+                                        $('#listRequestsAgency .select2').val(null).trigger('change');
+                                    }
+                                });
+                            },
+                            "order": [[ 0, "desc" ]],
+                            "pageLength": 25,
+                            "destroy": true,
+                            "ajax": {
+                                "url": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
+                                "type": "GET",
+                                "data": {
+                                    "filterInitDate": $("#filterInitDate").val(),
+                                    "filterEndDate": $("#filterEndDate").val(),
+                                    "filterAgency": $("#filterAgency").val(),
+                                    "filterStatus": $("#filterStatus").val(),
+                                    "filterLevel": $("#filterLevel").val()
+                                }
+                            },
+                            "columns": [
+                                {data: 'request_id', className: 'text-left'},
+                                {data: 'process_name', className: 'text-left'},
+                                {data: 'employee_name', className: 'text-left'},
+                                {data: 'employee_ein', className: 'text-left'},
+                                {data: 'started', className: 'text-left'},
+                                {data: 'completed', className: 'text-left'},
+                                {data: 'current_task', className: 'text-left'},
+                                {data: 'current_user', className: 'text-left'},
+                                {data: 'status', className: 'text-left'},
+                                {data: 'options', className: 'text-right'}
+                            ],
+                            'language':{
+                            "loadingRecords": "<div class='lds-ring'><div></div><div></div><div></div><div></div></div><br>Please wait, we are getting your information"
+                            }
+                        });
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
 </script>
 @endsection
 @endsection

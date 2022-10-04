@@ -112,6 +112,7 @@
     window['define'] = window.temp_define;
 </script>
 <script type="text/javascript">
+    $(".skip-navigation.alert.alert-info").hide();
     $(document).ready( function () {
         $('th').on("click", function (event) {
             if($(event.target).is("input")){

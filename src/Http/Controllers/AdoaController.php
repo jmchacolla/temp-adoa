@@ -221,7 +221,14 @@ class AdoaController extends Controller
                 'media.id AS file_id',
                 'media.custom_properties')
             ->where('media.disk', 'public')
-            ->where('media.custom_properties->createdBy', 'null')
+            ->where(function ($query) {
+                $query->where('name', 'like', 'Formal_Appraisal_%')
+                    ->orWhere('name', 'like', 'Informal_Appraisal_%')
+                    ->orWhere('name', 'like', 'Coaching_Note_%')
+                    ->orWhere('name', 'like', 'Coaching_Note_%')
+                    ->orWhere('name', 'like', 'Self_Appraisal_%')
+                    ->orWhere('name', 'Remote_Work_Agreement');
+            })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->where(function ($query) {
@@ -504,15 +511,16 @@ class AdoaController extends Controller
                 'process_requests.process_id',
                 'process_requests.name',
                 'process_requests.status as request_status',
-                'process_requests.data->EMA_EMPLOYEE_FIRST_NAME as ema_employee_first_name',
-                'process_requests.data->EMA_EMPLOYEE_LAST_NAME as ema_employee_last_name',
-                'process_requests.data->EMA_EMPLOYEE_EIN as ema_employee_ein',
-                'process_requests.data->CON_EMPLOYEE_FIRST_NAME as con_employee_first_name',
-                'process_requests.data->CON_EMPLOYEE_LAST_NAME as con_employee_last_name',
-                'process_requests.data->CON_EMPLOYEE_EIN as con_employee_ein',
-                'process_requests.data->FA_OWNER as FA_OWNER',
+                'process_requests.EMA_EMPLOYEE_FIRST_NAME as ema_employee_first_name',
+                'process_requests.EMA_EMPLOYEE_LAST_NAME as ema_employee_last_name',
+                'process_requests.EMA_EMPLOYEE_EIN as ema_employee_ein',
+                'process_requests.CON_EMPLOYEE_FIRST_NAME as con_employee_first_name',
+                'process_requests.CON_EMPLOYEE_LAST_NAME as con_employee_last_name',
+                'process_requests.CON_EMPLOYEE_EIN as con_employee_ein',
+                'process_requests.FA_OWNER as FA_OWNER',
                 'process_requests.created_at',
                 'process_requests.completed_at')
+            ->whereBetween('process_requests.created_at', [$request->input('filterInitDate'), $request->input('filterEndDate')])
             ->whereNotIn('processes.process_category_id', [1, 2]);
 
             $positionsArray = array();
@@ -526,26 +534,12 @@ class AdoaController extends Controller
 
             if (count($positionsArray) > 0) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
-                ->whereIn('process_requests.data->EMA_EMPLOYEE_POSITION_NUMBER', $positionsArray)
-                ->orWhereIn('process_requests.data->CON_EMPLOYEE_POSITION_NUMBER', $positionsArray)
-                ->orWhereIn('process_requests.data->EMPLOYEE_POSITION_NUMBER', $positionsArray)
-                ->orWhereIn('process_requests.data->ADOA_RWA_POSITION', $positionsArray)
-                ->orWhereIn('process_requests.data->terminate_data->ADOA_TA_POSITION', $positionsArray);
+                ->whereIn('process_requests.POSITION_NUMBER', $positionsArray);
             }
 
             if ($flagProcess == 1) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
                     ->whereIn('process_requests.process_id', $processesArray);
-            }
-
-            if (!empty($request->input('filterInitDate'))) {
-                $adoaListRequestsAgency = $adoaListRequestsAgency
-                    ->where('process_requests.created_at', '>=', $request->input('filterInitDate'));
-            }
-
-            if (!empty($request->input('filterEndDate'))) {
-                $adoaListRequestsAgency = $adoaListRequestsAgency
-                    ->where('process_requests.created_at', '<=', $request->input('filterEndDate'));
             }
 
             if (empty($request->input('filterStatus'))) {
@@ -596,7 +590,14 @@ class AdoaController extends Controller
                         ->select('id AS file_id',
                             'custom_properties')
                         ->where('model_id', $request->request_id)
-                        ->where('custom_properties->createdBy', 'null')
+                        ->where(function ($query) {
+                            $query->where('name', 'like', 'Formal_Appraisal_%')
+                                ->orWhere('name', 'like', 'Informal_Appraisal_%')
+                                ->orWhere('name', 'like', 'Coaching_Note_%')
+                                ->orWhere('name', 'like', 'Coaching_Note_%')
+                                ->orWhere('name', 'like', 'Self_Appraisal_%')
+                                ->orWhere('name', 'Remote_Work_Agreement');
+                        })
                         ->get();
     
                     $request->task_id = null;
