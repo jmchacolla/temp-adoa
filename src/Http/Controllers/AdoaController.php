@@ -232,9 +232,9 @@ class AdoaController extends Controller
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->where(function ($query) {
-                //$query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
-                    //->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
-                $query->where('process_requests.data->EMA_SUPERVISOR_EIN', Auth::user()->username)
+                $query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
+                    ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
+                    ->orwhere('process_requests.data->EMA_SUPERVISOR_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->EMA_UPLINE_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_SUPERVISOR_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_UPLINE_EIN', Auth::user()->username)
