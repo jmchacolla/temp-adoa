@@ -222,19 +222,19 @@ class AdoaController extends Controller
                 'media.custom_properties')
             ->where('media.disk', 'public')
             ->where(function ($query) {
-                $query->where('name', 'like', 'Formal_Appraisal_%')
-                    ->orWhere('name', 'like', 'Informal_Appraisal_%')
-                    ->orWhere('name', 'like', 'Coaching_Note_%')
-                    ->orWhere('name', 'like', 'Coaching_Note_%')
-                    ->orWhere('name', 'like', 'Self_Appraisal_%')
-                    ->orWhere('name', 'Remote_Work_Agreement');
+                $query->where('media.name', 'like', 'Formal_Appraisal_%')
+                    ->orWhere('media.name', 'like', 'Informal_Appraisal_%')
+                    ->orWhere('media.name', 'like', 'Coaching_Note_%')
+                    ->orWhere('media.name', 'like', 'Coaching_Note_%')
+                    ->orWhere('media.name', 'like', 'Self_Appraisal_%')
+                    ->orWhere('media.name', 'Remote_Work_Agreement');
             })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->where(function ($query) {
-                $query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
-                    ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
-                    ->orWhere('process_requests.data->EMA_SUPERVISOR_EIN', Auth::user()->username)
+                //$query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
+                    //->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
+                $query->where('process_requests.data->EMA_SUPERVISOR_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->EMA_UPLINE_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_SUPERVISOR_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_UPLINE_EIN', Auth::user()->username)
