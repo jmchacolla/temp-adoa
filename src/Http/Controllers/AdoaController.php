@@ -231,6 +231,7 @@ class AdoaController extends Controller
             })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
+            ->whereNotIn('process_requests.name', ['AZPerforms - Self-Appraisal', 'AZPerforms - My Coaching Notes'])
             ->where(function ($query) {
                 $query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)

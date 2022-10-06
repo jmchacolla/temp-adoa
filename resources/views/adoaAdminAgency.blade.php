@@ -195,6 +195,7 @@
 </script>
 <script type="text/javascript">
     $(".skip-navigation.alert.alert-info").hide();
+    var titleTable = [];
     $(document).ready( function () {
         $('th').on("click", function (event) {
             if($(event.target).is("input")){
@@ -238,7 +239,7 @@
             width: '100%',
             minimumInputLength: 2
         });
-        var titleTable = [];
+        
         var table = $('#listRequestsAgency').DataTable({
             "initComplete": function () {
                 count = 0;
