@@ -236,6 +236,7 @@ class AdoaController extends Controller
                 $query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
                     ->orwhere('process_requests.data->EMA_SUPERVISOR_EIN', Auth::user()->username)
+                    ->orwhere('process_requests.data->EMA_MANAGER_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->EMA_UPLINE_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_SUPERVISOR_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_UPLINE_EIN', Auth::user()->username)
