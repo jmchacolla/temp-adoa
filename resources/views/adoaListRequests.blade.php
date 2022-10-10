@@ -57,7 +57,7 @@
                                     $newCustomProperties = json_decode($customProperties);
                                 }
                             @endphp
-                            @if ($request->task_status == 'COMPLETED' && (!empty($request->file_id) || !is_null($request->file_id)))
+                            @if ($request->task_status == 'COMPLETED')
                                 <tr>
                                     <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
                                     <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
@@ -97,9 +97,11 @@
                                     <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
                                     <td class="text-left">{{ $request->request_status }}</td>
                                     <td class="text-right">
-                                        <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                        <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                        <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
+                                        @if (!empty($request->file_id) || !is_null($request->file_id))
+                                            <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                            <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                            <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
+                                        @endif
                                     </td>
                                 </tr>
                             @elseif ($request->task_status == 'ACTIVE')
