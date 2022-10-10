@@ -100,6 +100,7 @@ class AdoaController extends Controller
                 'process_requests.data',
                 'process_requests.created_at',
                 'process_requests.completed_at')
+            ->where('process_request_tokens.element_type', 'task')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
             ->where('process_requests.user_id', Auth::user()->id)
@@ -127,6 +128,7 @@ class AdoaController extends Controller
                         $request->file_id = null;
                         $request->custom_properties = null;
                         $request = (object) array_merge((array) $request, (array) $requestToken);
+                        $finalRequestList[] = $request;
                     }
                 } else {
                     $request->task_id = null;
@@ -138,8 +140,8 @@ class AdoaController extends Controller
                     $request->lastname = null;
                     $request->file_id = null;
                     $request->custom_properties = null;
+                    $finalRequestList[] = $request;
                 }
-                $finalRequestList[] = $request;
             } else {
                 $listRequestTokens = DB::table('media')
                     ->select('id AS file_id',
@@ -576,6 +578,7 @@ class AdoaController extends Controller
                             $request->file_id = null;
                             $request->custom_properties = null;
                             $request = (object) array_merge((array) $request, (array) $requestToken);
+                            $finalRequestList[] = $request;
                         }
                     } else {
                         $request->task_id = null;
@@ -585,8 +588,8 @@ class AdoaController extends Controller
                         $request->user_id_task = null;
                         $request->file_id = null;
                         $request->custom_properties = null;
+                        $finalRequestList[] = $request;
                     }
-                    $finalRequestList[] = $request;
                 } else {
                     $listRequestTokens = DB::table('media')
                         ->select('id AS file_id',
