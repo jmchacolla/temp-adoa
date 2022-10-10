@@ -100,7 +100,6 @@ class AdoaController extends Controller
                 'process_requests.data',
                 'process_requests.created_at',
                 'process_requests.completed_at')
-            ->where('process_request_tokens.element_type', 'task')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
             ->where('process_requests.user_id', Auth::user()->id)
@@ -119,6 +118,7 @@ class AdoaController extends Controller
                         'process_request_tokens.user_id as user_id',
                         'users.firstname',
                         'users.lastname')
+                    ->where('process_request_tokens.element_type', 'task')
                     ->where('process_request_tokens.process_request_id', $request->request_id)
                     ->where('process_request_tokens.status', 'ACTIVE')
                     ->get();
@@ -569,6 +569,7 @@ class AdoaController extends Controller
                             'process_request_tokens.element_type',
                             'process_request_tokens.status as task_status',
                             'process_request_tokens.user_id as user_id_task')
+                        ->where('process_request_tokens.element_type', 'task')
                         ->where('process_request_tokens.process_request_id', $request->request_id)
                         ->where('process_request_tokens.status', 'ACTIVE')
                         ->get();
