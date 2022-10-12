@@ -524,7 +524,8 @@ class AdoaController extends Controller
                 'process_requests.FA_OWNER as FA_OWNER',
                 'process_requests.created_at',
                 'process_requests.completed_at')
-            ->whereBetween('process_requests.created_at', [$request->input('filterInitDate'), $request->input('filterEndDate')])
+            ->whereDate('process_requests.created_at', '>=', $request->input('filterInitDate'))
+            ->whereDate('process_requests.created_at', '<=', $request->input('filterEndDate'))
             ->whereNotIn('processes.process_category_id', [1, 2]);
 
             $positionsArray = array();
