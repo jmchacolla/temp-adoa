@@ -134,7 +134,7 @@
             </thead>
         </table>
     </div>
-    <div class="modal fade" id="showPdf" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="showPdf" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -339,8 +339,9 @@
                     $('#spanCurrentUser').html(responseTask.data[0].firstname + ' ' + responseTask.data[0].lastname);
                     $('#divTaskId').html('');
                     $('#divTaskId').html(responseTask.data[0].id);
+                    $('#selectUserId').val(null).trigger('change');
                     $('#showReassing').modal('show');
-                    $('#showReassing .form-group').eq(1).show()
+                    $('#showReassing .form-group').eq(1).show();
                     $('#buttonReassign').show();
                 } else {
                     $('#reassignTitle').html('Reassign request # <strong id="strongRequestId">' + request + '</strong>');
@@ -349,8 +350,9 @@
                     $('#spanCurrentUser').html('');
                     $('#spanCurrentUser').html('The request does not have a valid user.');
                     $('#divTaskId').html('');
+                    $('#selectUserId').val(null).trigger('change');
                     $('#showReassing').modal('show');
-                    $('#showReassing .form-group').eq(1).hide()
+                    $('#showReassing .form-group').eq(1).hide();
                     $('#buttonReassign').hide();
                 }
             });
@@ -360,11 +362,11 @@
             if ($('#selectUserId').val() == null) {
                 $('#divMessageError').css("display", "");
             } else {
+                $('#showReassing').modal('hide');
                 ProcessMaker.confirmModal('Confirm', '<div class="text-left">Are you sure that you want to reassign the request # ' + $('#strongRequestId').text() + ' from ' + $('#spanCurrentUser').text() + ' to ' + $('#selectUserId option:selected').text() + '?</div>', '', () => {
                     ProcessMaker.apiClient.put('adoa/update-task/' + $('#divTaskId').text(), {user_id: $('#selectUserId').val()});
                     ProcessMaker.alert('The request was reassigned successfully! Your browser will be reloaded!', 'success');
-                    $('#showReassing').modal('hide');
-                    setTimeout(function(){
+                    setTimeout(function() {
                         location.reload();
                     }, 3000);
                 });
@@ -373,7 +375,6 @@
         });
 
         $('#showReassing').on('hidden.bs.modal', function () {
-            $('#selectUserId').val(null).trigger('change');
             $('#divMessageError').css("display", "none");
         });
 

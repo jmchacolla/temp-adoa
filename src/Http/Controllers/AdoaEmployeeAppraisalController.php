@@ -1111,8 +1111,8 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<td>';
             $html .=  empty($content['agency_name']) ? $whiteSpace : $content['agency_name'];
             $html .= '</td>';
-            $html .= '<td>&nbsp;</td>';
-            $html .= '<td>&nbsp;</td>';
+            $html .= '<td>' . empty($appraisal['EMPLOYEE_DIVISION']) ? $whiteSpace : $appraisal['EMPLOYEE_DIVISION']. '</td>';
+            $html .= '<td>' . empty($appraisal['EMPLOYEE_TEAM']) ? $whiteSpace : $appraisal['EMPLOYEE_TEAM']. '</td>';
             $html .= '<td>';
             $html .=  empty($content['ema_employee_position_title']) ? $whiteSpace : $content['ema_employee_position_title'];
             $html .= '</td>';
@@ -1120,6 +1120,8 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</tbody>';
             $html .= '</table>';
             $html .= '</br>';
+
+            $html .= '<p style="font-size: 12px; font-family: Helvetica; text-align: justify;">Note: This Performance Appraisal may be used as a quarterly or mid-cycle Performance Appraisal tool. If you choose to use it as a quarterly or mid-cycle tool, it is ‘advisory’ only. It will not be placed in the employee’s official personnel file, but will be maintained in the supervisor’s file. Quarterly or mid-cycle ratings are not to be averaged to arrive at the final performance period (normally annual) rating. The final Results and Behaviors ratings will be determined by the supervisor and will be based on the employee’s performance throughout the entire (normally annual) performance period.</p>';
 
             $html .= '<table class="table" style="border-collapse:collapse; font-family: Helvetica">';
             $html .= '<thead class="thead-light" style="font-size: 12px;">';
@@ -1269,7 +1271,7 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</ul>';
             $html .= '</td>';
             $html .= '<td style="border: 1px solid;" colspan="2" rowspan="4">';
-            $html .= '<ul>';
+            $html .= '<ul style="list-style-position: outside;">';
             $html .= '<li>Models the Arizona Management System in word and action*</li>';
             $html .= '<li>Sets challenging expectations/goals and measures results</li>';
             $html .= '<li>Raises the level of team performance and capability</li>';
@@ -1413,6 +1415,61 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</tr>';
             $html .= '</tbody>';
             $html .= '</table>';
+
+            ////----section 5
+            $html .= '<table class="table" width="100%" style="page-break-after:always; font-family: Helvetica;">';
+            $html .= '<thead style="font-size: 12px;">';
+            $html .= '<tr class="thead-light">';
+            $html .= '<th scope="col" align="left" style="background: #e1e5e7; color: #505b67" height="30px"><strong>SECTION 5: EMPLOYEE COMMENTS</strong></th>';
+            $html .= '</tr>';
+            $html .= '<tr style="background-color: #a21c28; color: #fff;">';
+            $html .= '<th height="30px">&nbsp;</th>';
+            $html .= '</tr>';
+            $html .= '</thead>';
+            $html .= '<tbody style="font-size: 12px;">';
+            $html .= '<tr>';
+            $html .= '<td style="height: 150px;">';
+            $html .=  empty($appraisal['EMA_FINAL_EMPLOYEE_COMMENT']) ? $whiteSpace : $appraisal['EMA_FINAL_EMPLOYEE_COMMENT'];
+            $html .= '</td>';
+            $html .= '</tr>';
+            $html .= '</tbody>';
+            $html .= '</table>';
+
+            ////----section 6
+            $html .= '<table class="table" width="100%" style="page-break-after:always; font-family: Helvetica;">';
+            $html .= '<thead style="font-size: 12px;">';
+            $html .= '<tr class="thead-light">';
+            $html .= '<th scope="col" align="left" style="background: #e1e5e7; color: #505b67" height="30px"><strong>SECTION 6: ACKNOWLEDGEMENT AND SIGNATURES</strong></th>';
+            $html .= '</tr>';
+            $html .= '<tr style="background-color: #a21c28; color: #fff;">';
+            $html .= '<th height="30px">By typing their names below, the employee and manager acknowledge that they are electronically signing this form and that the employee has received a copy of this appraisal and it has been discussed. The employee&#39;s electronic signature may or may not signify agreement with the appraisal.</th>';
+            $html .= '</tr>';
+            $html .= '</thead>';
+            $html .= '<tbody style="font-size: 12px;">';
+            $html .= '<tr>';
+            $html .= '<td style="height: 150px;">';
+            $html .=  empty($appraisal['EMA_FINAL_EMPLOYEE_COMMENT']) ? $whiteSpace : $appraisal['EMA_FINAL_EMPLOYEE_COMMENT'];
+            $html .= '</td>';
+            $html .= '</tr>';
+
+            $html .= '<tr>';
+            $html .= '<td style="width: 20%;">Supervisor Signature:</td>';
+            $html .= '<td style="width: 30%;">';
+            $html .=  empty($appraisal['EMA_SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['EMA_SUPERVISOR_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['EMA_SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['EMA_SUPERVISOR_LAST_NAME'];
+            $html .= '</td>';
+            $html .= '<td style="width: 20%;">Date:</td>';
+            $html .= '<td style="width: 30%;">';
+            $html .=  empty($appraisal['EMA_FORM_FINALIZE_MANAGER_DATE']) ? $whiteSpace : date("m/d/Y, h:i:s A", strtotime($appraisal['EMA_FORM_FINALIZE_MANAGER_DATE']));
+            $html .= '</td>';
+            $html .= '</tr>';
+
+            $html .= '</tbody>';
+            $html .= '</table>';
+
+
+
+
             return $html;
         } catch (Exception $exception) {
            return '';
@@ -1475,12 +1532,12 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<table width="100%" class="table" style="border-collapse: collapse; font-family: Helvetica; font-size: 12px;">';
             $html .= '<thead class="thead-light">';
             $html .= '<tr>';
-            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67">Supervisor First Name</th>';
-            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67">Supervisor Last Name</th>';
-            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67">Agency</th>';
-            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67">Division</th>';
-            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67">Team</th>';
-            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67">Employee Job Title</th>';
+            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67; width:16%">Supervisor First Name</th>';
+            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67; width:16%">Supervisor Last Name</th>';
+            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67; width:16%">Agency</th>';
+            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67; width:16%">Division</th>';
+            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67; width:16%">Team</th>';
+            $html .= '<th scope="col" height="30px" style="background: #e1e5e7; color: #505b67; width:16%">Employee Job Title</th>';
             $html .= '</tr>';
             $html .= '</thead>';
             $html .= '<tbody>';
@@ -1494,8 +1551,8 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<td>';
             $html .=  empty($content['agency_name']) ? $whiteSpace : $content['agency_name'];
             $html .= '</td>';
-            $html .= '<td>&nbsp;</td>';
-            $html .= '<td>&nbsp;</td>';
+            $html .= '<td>' . empty($appraisal['EMPLOYEE_DIVISION']) ? $whiteSpace : $appraisal['EMPLOYEE_DIVISION']. '</td>';
+            $html .= '<td>' . empty($appraisal['EMPLOYEE_TEAM']) ? $whiteSpace : $appraisal['EMPLOYEE_TEAM']. '</td>';
             $html .= '<td>';
             $html .=  empty($content['ema_employee_position_title']) ? $whiteSpace : $content['ema_employee_position_title'];
             $html .= '</td>';
@@ -1515,7 +1572,7 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</thead>';
             $html .= '<tbody style="font-size: 12px;">';
             $html .= '<tr style="background-color: #a21c28; color: #fff;">';
-            $html .= '<td height="40">Consider</td>';
+            $html .= '<td height="40" style="text-align:center;">Consider</td>';
             $html .= '<td>';
             $html .= '<ul>';
             $html .= '<li>Job expectations and metrics</li>';
@@ -1812,7 +1869,15 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<tbody style="font-size: 12px;">';
             $html .= '<tr>';
             $html .= '<td style="height: 150px;">';
-            $html .=  empty($content['section5_comments']) ? $whiteSpace : $content['section5_comments'];
+            $html .=  empty($appraisal['EMA_FINAL_EMPLOYEE_COMMENT']) ? $whiteSpace : $appraisal['EMA_FINAL_EMPLOYEE_COMMENT'];
+            $html .= '</td>';
+            $html .= '</tr>';
+            $html .= '<tr>';
+            $html .= '</td>';
+            $html .= '<p>';
+            $html .= 'Signature: <br/>';
+            $html .= empty($appraisal['EMA_EMPLOYEE_SIGNATURE']) ? $whiteSpace : $appraisal['EMA_EMPLOYEE_SIGNATURE'];
+            $html .= '</p>';
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
@@ -1838,7 +1903,7 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</td>';
             $html .= '<td style="width: 20%;">Date:</td>';
             $html .= '<td style="width: 30%;">';
-            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['DATE']));
+            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y, h:i:s A", strtotime($appraisal['DATE']));
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '<tr>';
@@ -1849,7 +1914,7 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</td>';
             $html .= '<td style="width: 20%;">Date:</td>';
             $html .= '<td style="width: 30%;">';
-            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y", strtotime($appraisal['DATE']));
+            $html .=  empty($appraisal['DATE']) ? $whiteSpace : date("m/d/Y, h:i:s A", strtotime($appraisal['DATE']));
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
