@@ -650,7 +650,7 @@ class AdoaController extends Controller
                             $newCustomProperties = json_decode($customProperties);
                         }
 
-                        if ($request->task_status == 'COMPLETED') {
+                        if ($request->task_status == 'COMPLETED' && (!empty($request->file_id) || !is_null($request->file_id))) {
                             $employeeName = '';
                             $employeeEin = '';
 
@@ -660,19 +660,17 @@ class AdoaController extends Controller
                                 if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile)) {
                                     $employeeName = $nameFile[3] . ' ' . $nameFile[4];
                                 }
+
+                                if (array_key_exists(5, $nameFile)) {
+                                    $employeeEin = $nameFile[5];
+                                }
                             } else {
                                 if (!empty($request->ema_employee_first_name)) {
                                     $employeeName = $request->ema_employee_first_name . ' ' . $request->ema_employee_last_name;
                                 } elseif (!empty($request->con_employee_first_name)) {
                                     $employeeName = $request->con_employee_first_name . ' ' . $request->con_employee_last_name;
                                 }
-                            }
 
-                            if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) {
-                                if (array_key_exists(5, $nameFile)) {
-                                    $employeeEin = $nameFile[5];
-                                }
-                            } else {
                                 if (!empty($request->ema_employee_ein)) {
                                     $employeeEin = $request->ema_employee_ein;
                                 } elseif (!empty($request->con_employee_ein)) {
@@ -680,10 +678,7 @@ class AdoaController extends Controller
                                 }
                             }
 
-                            $options = '';
-                            if (!empty($request->file_id) || !is_null($request->file_id)) {
-                                $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="/request/' . $request->request_id . '/files/' . $request->file_id . '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
-                            }
+                            $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="/request/' . $request->request_id . '/files/' . $request->file_id . '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
 
                             $dataTable[] = [
                                 'request_id' => $request->request_id,
