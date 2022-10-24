@@ -1079,11 +1079,11 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</td>';
             $html .= '<td>From</td>';
             $html .= '<td>';
-            $html .=  empty($content['period_to']) ? $whiteSpace : $content['period_to'];
+            $html .=  empty($content['period_from']) ? $whiteSpace : $content['period_from'];
             $html .= '</td>';
             $html .= '<td>To</td>';
             $html .= '<td>';
-            $html .=  empty($content['period_from']) ? $whiteSpace : $content['period_from'];
+            $html .=  empty($content['period_to']) ? $whiteSpace : $content['period_to'];
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
@@ -1524,11 +1524,11 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '</td>';
             $html .= '<td>From</td>';
             $html .= '<td>';
-            $html .=  empty($content['period_to']) ? $whiteSpace : $content['period_to'];
+            $html .=  empty($content['period_from']) ? $whiteSpace : $content['period_from'];
             $html .= '</td>';
             $html .= '<td>To</td>';
             $html .= '<td>';
-            $html .=  empty($content['period_from']) ? $whiteSpace : $content['period_from'];
+            $html .=  empty($content['period_to']) ? $whiteSpace : $content['period_to'];
             $html .= '</td>';
             $html .= '</tr>';
             $html .= '</tbody>';
