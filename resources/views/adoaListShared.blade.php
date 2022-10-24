@@ -49,36 +49,38 @@
                                     $newCustomProperties = json_decode($customProperties);
                                 }
                             @endphp
-                            <tr>
-                                <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
-                                <td class="text-left">@if (!empty($newData->EMPLOYEE_FIRST_NAME)) {{ $newData->EMPLOYEE_FIRST_NAME }} {{ $newData->EMPLOYEE_LAST_NAME }} @endif</td>
-                                <td class="text-left">
-                                    @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
-                                        @php
-                                            $dataName = $newCustomProperties->data_name;
-                                            $nameFile = explode('_', $dataName);
-                                        @endphp
-                                        @if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile))
-                                            {{ $nameFile[3] }} {{ $nameFile[4] }}
+                            @if ($request->user_id != Auth::user()->id || $request->user_id != Auth::user()->id)
+                                <tr>
+                                    <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
+                                    <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
+                                    <td class="text-left">@if (!empty($newData->EMPLOYEE_FIRST_NAME)) {{ $newData->EMPLOYEE_FIRST_NAME }} {{ $newData->EMPLOYEE_LAST_NAME }} @endif</td>
+                                    <td class="text-left">
+                                        @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
+                                            @php
+                                                $dataName = $newCustomProperties->data_name;
+                                                $nameFile = explode('_', $dataName);
+                                            @endphp
+                                            @if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile))
+                                                {{ $nameFile[3] }} {{ $nameFile[4] }}
+                                            @endif
+                                        @else
+                                            @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
+                                                {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
+                                            @elseif (!empty($newData->CON_EMPLOYEE_FIRST_NAME))
+                                                {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
+                                            @endif
                                         @endif
-                                    @else
-                                        @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                            {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                        @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                            {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
-                                        @endif
-                                    @endif
-                                </td>
-                                <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                <td class="text-right">
-                                    @if (!empty($request->file_id) || !is_null($request->file_id))
-                                        <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                        <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                        <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
-                                    </tr>
-                                </td>
+                                    </td>
+                                    <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
+                                    <td class="text-left">{{ $newCompletedDateFormat }}</td>
+                                    <td class="text-right">
+                                        @if (!empty($request->file_id) || !is_null($request->file_id))
+                                            <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                            <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                            <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
+                                        </tr>
+                                    </td>
+                                </tr>
                             @endif
                         @endif
                     @endforeach

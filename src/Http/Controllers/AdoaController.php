@@ -215,6 +215,7 @@ class AdoaController extends Controller
             ->join('media', 'process_requests.id', '=', 'media.model_id')
             ->join('processes', 'process_requests.process_id', '=', 'processes.id')
             ->select('process_requests.id as request_id',
+                'process_requests.user_id',
                 'process_requests.process_id',
                 'process_requests.name',
                 'process_requests.data',
@@ -233,7 +234,7 @@ class AdoaController extends Controller
             })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
-            ->whereNotIn('process_requests.name', ['AZPerforms - Self-Appraisal', 'AZPerforms - My Coaching Notes'])
+            //->whereNotIn('process_requests.name', ['AZPerforms - Self-Appraisal', 'AZPerforms - My Coaching Notes'])
             ->where(function ($query) {
                 $query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
