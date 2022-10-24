@@ -650,7 +650,7 @@ class AdoaController extends Controller
                             $newCustomProperties = json_decode($customProperties);
                         }
 
-                        if ($request->task_status == 'COMPLETED' && (!empty($request->file_id) || !is_null($request->file_id))) {
+                        if ($request->task_status == 'COMPLETED') {
                             $employeeName = '';
                             $employeeEin = '';
 
@@ -678,7 +678,10 @@ class AdoaController extends Controller
                                 }
                             }
 
-                            $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="/request/' . $request->request_id . '/files/' . $request->file_id . '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                            $options = '';
+                            if (!empty($request->file_id) || !is_null($request->file_id)) {
+                                $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="/request/' . $request->request_id . '/files/' . $request->file_id . '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                            }
 
                             $dataTable[] = [
                                 'request_id' => $request->request_id,
