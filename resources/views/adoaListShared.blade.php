@@ -78,7 +78,7 @@
                                             <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
                                             <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
                                             <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
-                                        </tr>
+                                        @endif
                                     </td>
                                 </tr>
                             @endif
