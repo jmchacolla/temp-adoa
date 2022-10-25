@@ -83,6 +83,7 @@ class AdoaController extends Controller
                 'process_request_tokens.created_at')
             ->where('process_request_tokens.element_type', 'task')
             ->where('process_request_tokens.status', 'ACTIVE')
+            ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
             ->where('process_request_tokens.user_id', Auth::user()->id)
             ->orderBy('process_request_tokens.process_request_id', 'desc')
             ->get();
@@ -101,6 +102,7 @@ class AdoaController extends Controller
                 'process_requests.created_at',
                 'process_requests.completed_at')
             ->whereNotIn('processes.process_category_id', [1, 2])
+            ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
             ->where('process_requests.user_id', Auth::user()->id)
             ->orderBy('process_requests.id', 'desc')
@@ -234,7 +236,7 @@ class AdoaController extends Controller
             })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
-            //->whereNotIn('process_requests.name', ['AZPerforms - Self-Appraisal', 'AZPerforms - My Coaching Notes'])
+            ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
             ->where(function ($query) {
                 $query->where('process_requests.data->EMA_EMPLOYEE_EIN', Auth::user()->username)
                     ->orWhere('process_requests.data->CON_EMPLOYEE_EIN', Auth::user()->username)
@@ -527,7 +529,8 @@ class AdoaController extends Controller
                 'process_requests.completed_at')
             ->whereDate('process_requests.created_at', '>=', $request->input('filterInitDate'))
             ->whereDate('process_requests.created_at', '<=', $request->input('filterEndDate'))
-            ->whereNotIn('processes.process_category_id', [1, 2]);
+            ->whereNotIn('processes.process_category_id', [1, 2])
+            ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value]);
 
             $positionsArray = array();
             if ($agencies[0] != 'ALL' || $levels[0] != 'ALL') {
