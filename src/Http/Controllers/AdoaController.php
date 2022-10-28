@@ -149,14 +149,14 @@ class AdoaController extends Controller
                     ->select('id AS file_id',
                         'custom_properties')
                     ->where('model_id', $request->request_id)
-                    ->where(function ($query) {
-                        $query->where('name', 'like', 'Formal_Appraisal_%')
-                            ->orWhere('name', 'like', 'Informal_Appraisal_%')
-                            ->orWhere('name', 'like', 'Coaching_Note_%')
-                            ->orWhere('name', 'like', 'Coaching_Note_%')
-                            ->orWhere('name', 'like', 'Self_Appraisal_%')
-                            ->orWhere('name', 'Remote_Work_Agreement');
-                    })
+                    // ->where(function ($query) {
+                    //     $query->where('name', 'like', 'Formal_Appraisal_%')
+                    //         ->orWhere('name', 'like', 'Informal_Appraisal_%')
+                    //         ->orWhere('name', 'like', 'Coaching_Note_%')
+                    //         ->orWhere('name', 'like', 'Coaching_Note_%')
+                    //         ->orWhere('name', 'like', 'Self_Appraisal_%')
+                    //         ->orWhere('name', 'Remote_Work_Agreement');
+                    // })
                     ->get();
 
                 $request->task_id = null;
@@ -226,14 +226,14 @@ class AdoaController extends Controller
                 'media.id AS file_id',
                 'media.custom_properties')
             ->where('media.disk', 'public')
-            ->where(function ($query) {
-                $query->where('media.name', 'like', 'Formal_Appraisal_%')
-                    ->orWhere('media.name', 'like', 'Informal_Appraisal_%')
-                    ->orWhere('media.name', 'like', 'Coaching_Note_%')
-                    ->orWhere('media.name', 'like', 'Coaching_Note_%')
-                    ->orWhere('media.name', 'like', 'Self_Appraisal_%')
-                    ->orWhere('media.name', 'Remote_Work_Agreement');
-            })
+            // ->where(function ($query) {
+            //     $query->where('media.name', 'like', 'Formal_Appraisal_%')
+            //         ->orWhere('media.name', 'like', 'Informal_Appraisal_%')
+            //         ->orWhere('media.name', 'like', 'Coaching_Note_%')
+            //         ->orWhere('media.name', 'like', 'Coaching_Note_%')
+            //         ->orWhere('media.name', 'like', 'Self_Appraisal_%')
+            //         ->orWhere('media.name', 'Remote_Work_Agreement');
+            // })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
@@ -601,14 +601,14 @@ class AdoaController extends Controller
                         ->select('id AS file_id',
                             'custom_properties')
                         ->where('model_id', $request->request_id)
-                        ->where(function ($query) {
-                            $query->where('name', 'like', 'Formal_Appraisal_%')
-                                ->orWhere('name', 'like', 'Informal_Appraisal_%')
-                                ->orWhere('name', 'like', 'Coaching_Note_%')
-                                ->orWhere('name', 'like', 'Coaching_Note_%')
-                                ->orWhere('name', 'like', 'Self_Appraisal_%')
-                                ->orWhere('name', 'Remote_Work_Agreement');
-                        })
+                        // ->where(function ($query) {
+                        //     $query->where('name', 'like', 'Formal_Appraisal_%')
+                        //         ->orWhere('name', 'like', 'Informal_Appraisal_%')
+                        //         ->orWhere('name', 'like', 'Coaching_Note_%')
+                        //         ->orWhere('name', 'like', 'Coaching_Note_%')
+                        //         ->orWhere('name', 'like', 'Self_Appraisal_%')
+                        //         ->orWhere('name', 'Remote_Work_Agreement');
+                        // })
                         ->get();
     
                     $request->task_id = null;
