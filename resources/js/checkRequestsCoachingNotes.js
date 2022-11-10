@@ -90,7 +90,7 @@ $(document).ready(function () {
         }, 10);
     }
 
-    $(".avatar-image-button.rounded-circle.bg-warning.border-0.align-middle.text-white.text-center.text-uppercase.text-nowrap").click(function() {
+    $(".btn.avatar-button.rounded-circle.overflow-hidden.p-0.m-0.d-inline-flex.border-0.btn-info").click(function() {
         setTimeout(function(){
             $("li:contains('Files')").hide();
         }, 100);
