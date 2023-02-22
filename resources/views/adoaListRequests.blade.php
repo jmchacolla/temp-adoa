@@ -97,9 +97,9 @@
                                     <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
                                     <td class="text-left">{{ $request->request_status }}</td>
                                     <td class="text-right">
-                                        <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                        <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                        <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;
+                                        <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View Document" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                        <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print Document" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                        <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download Document"></i></a>&nbsp;
                                     </td>
                                 </tr>
                             @elseif ($request->task_status == 'ACTIVE')

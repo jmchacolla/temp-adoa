@@ -9,7 +9,7 @@ use ProcessMaker\Models\ProcessRequestToken;
 use ProcessMaker\Models\EnvironmentVariable;
 use ProcessMaker\Events\ActivityAssigned;
 use ProcessMaker\Http\Resources\Task as Resource;
-use Spatie\MediaLibrary\Models\Media;
+use ProcessMaker\Models\Media;
 use RBAC;
 use Illuminate\Http\Request;
 use URL;
@@ -527,8 +527,6 @@ class AdoaController extends Controller
                 'process_requests.FA_OWNER as FA_OWNER',
                 'process_requests.created_at',
                 'process_requests.completed_at')
-            ->whereDate('process_requests.created_at', '>=', $request->input('filterInitDate'))
-            ->whereDate('process_requests.created_at', '<=', $request->input('filterEndDate'))
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value]);
 
@@ -544,6 +542,49 @@ class AdoaController extends Controller
             if (count($positionsArray) > 0) {
                 $adoaListRequestsAgency = $adoaListRequestsAgency
                 ->whereIn('process_requests.POSITION_NUMBER', $positionsArray);
+            }
+
+            if (!empty($request->input('filterInitDate'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                ->whereDate('process_requests.created_at', '>=', $request->input('filterInitDate'));
+            }
+
+            if (!empty($request->input('filterEndDate'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                ->whereDate('process_requests.created_at', '<=', $request->input('filterEndDate'));
+            }
+
+            if (!empty($request->input('filterEmployeeName'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                ->where(function ($query) use ($request) {
+                    $query->where('process_requests.EMA_EMPLOYEE_EIN', $request->input('filterEmployeeName'))
+                        ->orWhere('process_requests.CON_EMPLOYEE_EIN', $request->input('filterEmployeeName'));
+                });
+            }
+
+            if (!empty($request->input('filterEIN'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                ->where(function ($query) use ($request) {
+                    $query->where('process_requests.EMA_EMPLOYEE_EIN', $request->input('filterEIN'))
+                        ->orWhere('process_requests.CON_EMPLOYEE_EIN', $request->input('filterEIN'));
+                });
+            }
+
+            if (!empty($request->input('filterRequestId'))) {
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                ->where('process_requests.id', $request->input('filterRequestId'));
+            }
+
+            if (!empty($request->input('filterDocument'))) {
+                $processes = $this->getProcessId($request->input('filterDocument'));
+
+                $processesArray = array();
+                foreach ($processes as $process) {
+                    $processesArray[] = $process->id;
+                }
+
+                $adoaListRequestsAgency = $adoaListRequestsAgency
+                    ->whereIn('process_requests.process_id', $processesArray);
             }
 
             if ($flagProcess == 1) {
@@ -809,6 +850,14 @@ class AdoaController extends Controller
             ->toArray();
 
         return array_merge($unasiggnedRequestsPart1, $unasiggnedRequestsPart2);
+    }
+
+    public function getProcessId($processesArray) {
+        return DB::table('processes')
+            ->select('id', 'name')
+            ->whereIn('name', $processesArray)
+            ->where('status', 'ACTIVE')
+            ->get();
     }
 
     public function getAdoaPositionsByFilter($agencies = '', $processLevels = '', $next = '')
