@@ -140,7 +140,7 @@ class MigrateAdministrators
                 "Accept: application/json",
                 "Authorization: Bearer 3-5738379ecfaa4e9fb2eda707779732c7",
             );
-            $url = EnvironmentVariable::whereName('base_url_api_adoa')->first()->value . 'PMAgencyAdmins.json';
+            $url = EnvironmentVariable::whereName('base_url_api_adoa')->first()->value . 'PMAgencyAdmins.json?_size=max';
 
             $curl = curl_init($url);
             curl_setopt($curl, CURLOPT_URL, $url);

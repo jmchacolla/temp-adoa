@@ -53,34 +53,56 @@
 @section('content')
 <div class="container"  style="margin:10px;">
     <div class="card col-lg-12 col-md-12 col-sm-12">
-        <div class="" style="text-align:left;padding-top:5px;">
-            <h4 class="">Search Criteria</h4>
-            <div style="color: red">
-                <i>
-                    <strong>NOTE:</strong>  The maximum search range is 30 days. Select the “From Date” first, and adjust the “To Date” as needed.
-                </i>
+        <h4 class="">Search Criteria</h4>
+        <form class="needs-validation" id="formSearchCriteria" novalidate>
+            <div class="row">
+                <div class="form-group col col-lg-4 col-md-4 col-sm-12">
+                    <label for="filterEmployeeName" style="padding:5px; font-size: 13px">Employee Name</label>
+                    <select class="select2 form-control" id="filterEmployeeName"></select>
+                </div>
+                <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                    <label for="filterEIN" style="padding:5px; font-size: 13px">EIN</label>
+                    <input type="number" class="select2 form-control" id="filterEIN" placeholder="EIN" min="1">
+                </div>
+                <div class="form-group col col-lg-2 col-md-2 col-sm-12">
+                    <label for="filterRequestId" style="padding:5px; font-size: 13px">Request ID</label>
+                    <input type="number" class="select2 form-control" id="filterRequestId" placeholder="Request ID" min="1">
+                </div>
             </div>
-        </div>
-        <br>
-        <form class="needs-validation" novalidate>
+            <div class="row">
+                <div class="form-group col col-lg-4 col-md-4 col-sm-12">
+                    <label for="filterDocument" style="padding:5px; font-size: 13px">Select Document(s)</label>
+                    <select id="filterDocument" class="select2 form-control">
+                        <option value="AZPerforms - My Coaching Notes">My Coaching Note</option>
+                        <option value="AZPerforms - Coaching Notes for My Direct Reports">Coaching Note for My Direct Report</option>
+                        <option value="AZPerforms - Self-Appraisal">Self-Appraisal</option>
+                        <option value="AZPerforms - Informal Employee Appraisal">Informal Appraisal</option>
+                        <option value="AZPerforms - Formal Employee Appraisal">Formal Employee Appraisal</option>
+                        <option value="Remote Work - Initiate or Terminate Agreement">Initiate or Terminate Agreement</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Please select at least one Agency.
+                    </div>
+                </div>
+            </div>
             <div class="row">
                 <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                    <label for="filterInitDate" style="padding:5px; font-size: 13px">From (Request Started)<strong><span style="color: red; font-size: 15px">*</span></strong></label>
-                    <input type="date" class="form-control" id="filterInitDate" onchange="rangeDates()" max="{!! date('Y-m-d') !!}" required>
+                    <label for="filterInitDate" style="padding:5px; font-size: 13px">From (Request Started)</label>
+                    <input type="date" class="form-control" id="filterInitDate" onchange="rangeDates()" max="{!! date('Y-m-d') !!}">
                     <div class="invalid-feedback">
                         Please choose a date.
                     </div>
                 </div>
                 <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                    <label for="filterEndDate"  style="padding:5px; font-size: 13px">To (Request Started)<strong><span style="color: red; font-size: 15px">*</span></strong></label>
-                    <input type="date" class="form-control" id="filterEndDate" onchange="rangeDates()" max="{!! date('Y-m-d') !!}" required>
+                    <label for="filterEndDate" style="padding:5px; font-size: 13px">To (Request Started)</label>
+                    <input type="date" class="form-control" id="filterEndDate" onchange="rangeDates()" max="{!! date('Y-m-d') !!}">
                     <div class="invalid-feedback">
                         Please choose a date.
                     </div>
                 </div>
                 <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                    <label for="filterAgency"  style="padding:5px; font-size: 13px">Agency<strong><span style="color: red; font-size: 15px">*</span></strong></label>
-                    <select id="filterAgency" class="select2 form-control" required>
+                    <label for="filterAgency" style="padding:5px; font-size: 13px">Agency</label>
+                    <select id="filterAgency" class="select2 form-control">
                         @foreach ($agenciesArray as $agency)
                         <option value="{{ $agency }}">{{ $agency }}</option>
                         @endforeach
@@ -90,7 +112,7 @@
                     </div>
                 </div>
                 <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                    <label for="filterLevel"  style="padding:5px; font-size: 13px">Process Level</label>
+                    <label for="filterLevel" style="padding:5px; font-size: 13px">Process Level</label>
                     <select id="filterLevel" class="select2 form-control">
                         @foreach ($levelsArray as $level)
                         <option value="{{ $level }}">{{ $level }}</option>
@@ -98,16 +120,26 @@
                     </select>
                 </div>
                 <div class="form-group col col-lg-2 col-md-2 col-sm-12">
-                    <label for="filterStatus"  style="padding:5px; font-size: 13px">Status</label>
+                    <label for="filterStatus" style="padding:5px; font-size: 13px">Status</label>
                     <select id="filterStatus" class="select2 form-control">
                         <option value="ACTIVE">ACTIVE</option>
                         <option value="COMPLETED">COMPLETED</option>
                     </select>
                 </div>
             </div>
+            <div class="form-group col col-lg-12 col-md-12 col-sm-12" style="text-align:left;padding-top:5px;">
+                <div style="color: red; font-size: 13px">
+                    <i>
+                        <strong>NOTE:</strong>  The maximum search range is 90 days. Select the “From Date” first, and adjust the “To Date” as needed.
+                    </i>
+                </div>
+            </div>
             <div class="row">
                 <div class="form-group col col-lg-3 col-md-3 col-sm-12">
-                    <button id="btnGetList" class="btn btn-primary btn-sm" type="submit">Get List</button>
+                    <button id="btnGetList" class="btn btn-primary btn-block btn-sm" type="submit">Get List</button>
+                </div>
+                <div class="form-group col col-lg-3 col-md-3 col-sm-12">
+                    <button id="btnClear" class="btn btn-info btn-block btn-sm" type="button">Clear</button>
                 </div>
             </div>
         </form>
@@ -194,6 +226,11 @@
     window['define'] = window.temp_define;
 </script>
 <script type="text/javascript">
+    $("#btnGetList").hide();
+    $("#btnClear").hide();
+    $('#filterDocument').prop('disabled', true);
+    $('#filterAgency').prop('disabled', true);
+    $('#filterStatus').prop('disabled', true);
     $(".skip-navigation.alert.alert-info").hide();
     var titleTable = [];
     $(document).ready( function () {
@@ -217,7 +254,7 @@
                 },
                 processResults: function (response) {
                     let list = $.map(response, function (obj) {
-                        obj.id   = obj.id;
+                        obj.id = obj.id;
                         if (obj.agency == 'ALL') {
                             obj.text = obj.firstname + ' ' + obj.lastname  + ' - '  + obj.ein + ' - ' + obj.username;
                         } else {
@@ -236,6 +273,42 @@
                 cache: true
             },
             placeholder: 'Select user...',
+            width: '100%',
+            minimumInputLength: 2
+        });
+
+        $("#filterEmployeeName").select2({
+            ajax: {
+                url: '/api/1.0/adoa/get-users-agency',
+                dataType: 'json',
+                data: function (data) {
+                    return {
+                        searchTerm: data.term,
+                        agency: currentUser.meta.agency,
+                        employee_process_level: currentUser.meta.employee_process_level
+                    };
+                },
+                processResults: function (response) {
+                    let list = $.map(response, function (obj) {
+                        obj.id = obj.ein;
+                        if (obj.agency == 'ALL') {
+                            obj.text = obj.firstname + ' ' + obj.lastname  + ' - '  + obj.ein + ' - ' + obj.username;
+                        } else {
+                            obj.text = obj.firstname + ' ' + obj.lastname  + ' - '  + obj.agency + ' - ' + obj.username;
+                        }
+                        return obj;
+                       });
+                    return {
+                        results: list
+                    };
+                },
+                headers: {
+                    "X-CSRF-TOKEN" : "{{ csrf_token() }}",
+                    "Content-Type" : "application/json",
+                },
+                cache: true
+            },
+            placeholder: 'Employee Name',
             width: '100%',
             minimumInputLength: 2
         });
@@ -329,6 +402,13 @@
             width: '100%'
         });
 
+        $('#filterDocument').select2({
+            multiple: true,
+            closeOnSelect: true,
+            placeholder: 'Document(s)',
+            width: '100%'
+        });
+
         window.reassign = function(request, task) {
             ProcessMaker.apiClient.get('adoa/get-task-agency/' + task).then(responseTask => {
                 if (responseTask.data.length > 0) {
@@ -416,7 +496,7 @@
             var initAux = new Date(filterInitDate.value);
             var today = new Date();
 
-            init.setDate(init.getDate() + 31);
+            init.setDate(init.getDate() + 91);
 
             if (init > today) {
                 var nd = ("0" + (today.getDate())).slice(-2);
@@ -444,6 +524,57 @@
                 filterEndDate.value = y + '-' + m + '-' + nd;
             }
         }
+
+        window.validateButton = function() {
+            if ($("#filterEmployeeName").val() != null || $("#filterEIN").val().length > 0 || $("#filterRequestId").val().length > 0 || $("#filterDocument").val().length > 0 || $("#filterInitDate").val().length > 0 || $("#filterEndDate").val().length > 0 || $("#filterAgency").val().length > 0 || $("#filterLevel").val().length > 0 || $("#filterStatus").val().length > 0) {
+                $("#btnGetList").show();
+                $("#btnClear").show();
+            } else {
+                $("#btnGetList").hide();
+                $("#btnClear").hide();
+            }
+
+            if ($("#filterEmployeeName").val() != null || $("#filterEIN").val().length > 0) {
+                $('#filterDocument').prop('disabled', false);
+            } else {
+                $('#filterDocument').prop('disabled', true);
+            }
+
+            if ($("#filterInitDate").val() != '' && $("#filterInitDate").val() != '') {
+                $('#filterAgency').prop('disabled', false);
+                $('#filterAgency').prop('required',true);
+                $('#filterStatus').prop('disabled', false);
+            } else {
+                $('#filterAgency').prop('disabled', true);
+                $('#filterAgency').prop('required',false);
+                $('#filterStatus').prop('disabled', true);
+            }
+        }
+
+        $("#formSearchCriteria").change(function() {
+            validateButton();
+        });
+
+        $("#filterEIN").keyup(function() {
+            validateButton();
+        });
+
+        $("#filterRequestId").keyup(function() {
+            validateButton();
+        });
+
+        $("#btnClear").click(function() {
+            $("#filterEmployeeName").val("").trigger('change');
+            $("#filterEIN").val("");
+            $("#filterRequestId").val("");
+            $("#filterDocument").val("").trigger('change');
+            $("#filterInitDate").val("").trigger('change');
+            $("#filterEndDate").val("").trigger('change');
+            $("#filterAgency").val("").trigger('change');
+            $("#filterLevel").val("").trigger('change');
+            $("#filterStatus").val("").trigger('change');
+            validateButton();
+        });
     });
 
     (function() {
@@ -520,6 +651,10 @@
                                 "url": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
                                 "type": "GET",
                                 "data": {
+                                    "filterEmployeeName": $("#filterEmployeeName").val(),
+                                    "filterEIN": $("#filterEIN").val(),
+                                    "filterRequestId": $("#filterRequestId").val(),
+                                    "filterDocument": $("#filterDocument").val(),
                                     "filterInitDate": $("#filterInitDate").val(),
                                     "filterEndDate": $("#filterEndDate").val(),
                                     "filterAgency": $("#filterAgency").val(),

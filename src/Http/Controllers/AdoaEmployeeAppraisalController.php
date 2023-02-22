@@ -727,8 +727,12 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<td>';
             $html .=  empty($content['agency_name']) ? $whiteSpace : $content['agency_name'];
             $html .= '</td>';
-            $html .= '<td>&nbsp;</td>';
-            $html .= '<td>&nbsp;</td>';
+            $html .= '<td>' ;
+            $html .= empty($appraisal['EMPLOYEE_DIVISION']) ? $whiteSpace : $appraisal['EMPLOYEE_DIVISION'];
+            $html .= '</td>';
+            $html .= '<td>';
+            $html .= empty($appraisal['EMPLOYEE_TEAM']) ? $whiteSpace : $appraisal['EMPLOYEE_TEAM'];
+            $html .= '</td>';
             $html .= '<td>';
             $html .=  empty($content['ema_employee_position_title']) ? $whiteSpace : $content['ema_employee_position_title'];
             $html .= '</td>';
@@ -1027,6 +1031,67 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .=  empty($content['section4_looking_forward']) ? $whiteSpace : $content['section4_looking_forward'];
             $html .= '</td>';
             $html .= '</tr>';
+            $html .= '</tbody>';
+            $html .= '</table>';
+
+            // Section 5
+            $html .= '<table class="table" width="100%" style="font-family: Helvetica">';
+            $html .= '<thead style="font-size: 12px;">';
+            $html .= '<tr class="thead-light">';
+            $html .= '<th scope="col" align="left" height="30px" style="background: #e1e5e7; color: #505b67"><strong>SECTION 5: EMPLOYEE COMMENTS</strong></th>';
+            $html .= '</tr>';
+            $html .= '<tr style="background-color: #a21c28; color: #fff;">';
+            $html .= '<th height="30px">&nbsp;</th>';
+            $html .= '</tr>';
+            $html .= '</thead>';
+            $html .= '<tbody style="font-size: 12px;">';
+            $html .= '<tr>';
+            $html .= '<td style="height: 150px;">';
+            $html .=  empty($appraisal['EMA_EMPLOYEE_COMMENT']) ? $whiteSpace : $appraisal['EMA_EMPLOYEE_COMMENT'];
+            $html .= '</td>';
+            $html .= '</tr>';
+            $html .= '</tbody>';
+            $html .= '</table>';
+            $html .= '</br>';
+
+            ////----section 6
+            $html .= '<table class="table" style="page-break-after:always; font-family: Helvetica">';
+            $html .= '<thead style="font-size: 12px;">';
+            $html .= '<tr class="thead-light">';
+            $html .= '<th colspan="4" scope="col" align="left" height="30px" style="background: #e1e5e7; color: #505b67"><strong>SECTION 6: ACKNOWLEDGEMENT AND SIGNATURES</strong></th>';
+            $html .= '</tr>';
+            $html .= '<tr style="background-color: #a21c28; color: #fff;">';
+            $html .= '<th colspan="4">By typing their names below, the employee and manager acknowledge that they are electronically signing this form and that the employee has received a copy of this appraisal and it has been discussed. The employees electronic signature may or may not signify agreement with the appraisal.</th>';
+            $html .= '</tr>';
+            $html .= '</thead>';
+
+            $html .= '<tbody style="font-size: 12px;">';
+
+            $html .= '<tr>';
+            $html .= '<td style="width: 20%;">Employee Signature:</td>';
+            $html .= '<td style="width: 30%;">';
+                
+            $html .=  empty($appraisal['EMPLOYEE_FIRST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['EMPLOYEE_LAST_NAME']) ? $whiteSpace : $appraisal['EMPLOYEE_LAST_NAME'];
+            $html .= '</td>';
+            $html .= '<td style="width: 20%;">Date:</td>';
+            $html .= '<td style="width: 30%;">';
+            $html .=  empty($appraisal['EMA_FORM_FINALIZE_EMPLOYEE_DATE']) ? $whiteSpace : date("m/d/Y, h:i:s A", strtotime($appraisal['EMA_FORM_FINALIZE_EMPLOYEE_DATE']));
+            
+            $html .= '</td>';
+            $html .= '</tr>';
+            $html .= '<tr>';
+            $html .= '<td style="width: 20%;">Supervisor Signature:</td>';
+            $html .= '<td style="width: 30%;">';
+            $html .=  empty($appraisal['SUPERVISOR_FIRST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_FIRST_NAME'] . ' ';
+            $html .=  empty($appraisal['SUPERVISOR_LAST_NAME']) ? $whiteSpace : $appraisal['SUPERVISOR_LAST_NAME'];
+            $html .= '</td>';
+            $html .= '<td style="width: 20%;">Date:</td>';
+            $html .= '<td style="width: 30%;">';
+            $html .=  '&nbsp;';
+            $html .= '</td>';
+            $html .= '</tr>';
+
             $html .= '</tbody>';
             $html .= '</table>';
 
