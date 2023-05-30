@@ -9,7 +9,7 @@ use ProcessMaker\Models\ProcessRequestToken;
 use ProcessMaker\Models\EnvironmentVariable;
 use ProcessMaker\Events\ActivityAssigned;
 use ProcessMaker\Http\Resources\Task as Resource;
-use Spatie\MediaLibrary\Models\Media;
+use ProcessMaker\Models\Media;
 use RBAC;
 use Illuminate\Http\Request;
 use URL;

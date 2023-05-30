@@ -209,7 +209,7 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<div style="background-color:';
             $html .= $backgroundColor;
             $html .= '; padding: 12px;">';
-            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="https://doa.az.gov/sites/default/files/ADOA-White-300px.png" width="200px"/></div>';
+            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="' . url('/vendor/processmaker/packages/adoa/images/ADOA_LOGO_WHITE.png') . '" width="200px"/></div>';
             $html .= '</div>';
             $html .= '<h4 class="text-center" style="font-family: Helvetica; text-align: center; color: ';
             $html .= $backgroundColor;
@@ -439,7 +439,7 @@ class AdoaEmployeeAppraisalController extends Controller
             $html .= '<div style="background-color:';
             $html .= $backgroundColor;
             $html .= '; padding: 12px;">';
-            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="https://doa.az.gov/sites/default/files/ADOA-White-300px.png" width="200px"/></div>';
+            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="' . url('/vendor/processmaker/packages/adoa/images/ADOA_LOGO_WHITE.png') . '" width="200px"/></div>';
             $html .= '</div>';
             $html .= '<h4 class="text-center" style="font-family: Helvetica; text-align: center; color: ';
             $html .= $backgroundColor;
@@ -669,7 +669,7 @@ class AdoaEmployeeAppraisalController extends Controller
             ////---- Section 1
             $html = '';
             $html .= '<div style="background-color: #bd241f; padding: 12px;">';
-            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="https://doa.az.gov/sites/default/files/ADOA-White-300px.png" width="200px" /></div>';
+            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="' . url('/vendor/processmaker/packages/adoa/images/ADOA_LOGO_WHITE.png') . '" width="200px" /></div>';
             $html .= '</div>';
             $html .= '<h4 style="color: #bd241f; font-family: Helvetica; text-align: center"><strong>SELF APPRAISAL</strong></h4>';
 
@@ -1118,7 +1118,7 @@ class AdoaEmployeeAppraisalController extends Controller
             ////---- Section 1
             $html = '';
             $html .= '<div style="background-color: #bd241f; padding: 12px;">';
-            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="https://doa.az.gov/sites/default/files/ADOA-White-300px.png" width="200px" /></div>';
+            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="' . url('/vendor/processmaker/packages/adoa/images/ADOA_LOGO_WHITE.png') . '" width="200px" /></div>';
             $html .= '</div>';
             $html .= '<h4 style="color: #bd241f; font-family: Helvetica; text-align: center"><strong>INFORMAL APPRAISAL</strong></h4>';
 
@@ -1563,7 +1563,7 @@ class AdoaEmployeeAppraisalController extends Controller
             ////----Section 1
             $html = '';
             $html .= '<div style="background-color: #bd241f; padding: 12px;">';
-            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="https://doa.az.gov/sites/default/files/ADOA-White-300px.png" width="200px" /></div>';
+            $html .= '<div style="padding-left: 50px;" align="left"><img draggable="false" src="' . url('/vendor/processmaker/packages/adoa/images/ADOA_LOGO_WHITE.png') . '" width="200px" /></div>';
             $html .= '</div>';
             $html .= '<h4 style="color: #bd241f; font-family: Helvetica; text-align: center"><strong>MANAGER APPRAISAL FOR EMPLOYEE</strong></h4>';
 
