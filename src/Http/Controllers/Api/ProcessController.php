@@ -18,8 +18,8 @@ class ProcessController extends BaseProcessController
             return $result;
         }
 
-        $result->collection = $result->collection->filter(function($process) use ($user) {
-            $startProcessRequestRules = new StartProcessRequestRules($process, $user);
+        $result->collection = $result->collection->filter(function($apiResource) use ($user) {
+            $startProcessRequestRules = new StartProcessRequestRules($apiResource->resource, $user);
             if ($startProcessRequestRules->agencyAllowed()) {
                 return true;
             }
