@@ -216,7 +216,7 @@
                     </div>
             </div>
             <div id="emptyAppraisalList" class="alert alert-info" role="alert" style="width:80%;margin:auto;" v-if="showList == true && appraisalList.length <= 0">
-                <span><i class="fas fa-info-circle"></i> There are no results to show.</span>
+                <span><i class="fas fa-info-circle"></i> There are no documents available for {{ adoaEmployeeName }} from the time period you selected. Please change the search criteria and try again.</span>
             </div>
         </div>
         {{-- Modal View PDF --}}

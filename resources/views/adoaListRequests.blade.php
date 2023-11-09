@@ -97,8 +97,8 @@
                                     <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
                                     <td class="text-left">{{ $request->request_status }}</td>
                                     <td class="text-right">
-                                        <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View Document" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                        <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print Document" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                        <a href="javascript: viewPdf({{ $request->request_id }}, {{ $request->file_id }});"><i class="fas fa-eye" style="color: #71A2D4;" title="View Document"></i></a>&nbsp;
+                                        <a href="javascript: printPdf({{ $request->request_id }}, {{ $request->file_id }});"><i class="fas fa-print" style="color: #71A2D4;" title="Print Document"></i></a>&nbsp;
                                         <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download Document"></i></a>&nbsp;
                                     </td>
                                 </tr>
@@ -131,7 +131,7 @@
                                     <td class="text-left">{{ $request->request_status }}</td>
                                     <td class="text-right">
                                         @if ($request->user_id == Auth::user()->id)
-                                        <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
+                                        <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Go To Document"></i></a>
                                         @endif
                                     </td>
                                 </tr>

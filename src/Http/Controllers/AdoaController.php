@@ -725,7 +725,7 @@ class AdoaController extends Controller
 
                             $options = '';
                             if (!empty($request->file_id) || !is_null($request->file_id)) {
-                                $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="/request/' . $request->request_id . '/files/' . $request->file_id . '"><i class="fas fa-download" style="color: #71A2D4;" title="Download PDF"></i></a>&nbsp;';
+                                $options = '<a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View PDF" onclick="viewPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;<a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print PDF" onclick="printPdf(' . $request->request_id . ', ' . $request->file_id . ');"></i></a>&nbsp;';
                             }
 
                             $dataTable[] = [
@@ -837,11 +837,19 @@ class AdoaController extends Controller
     }
 
     public function getRequestsUnassigned() {
-        $unasiggnedRequestsPart1 = DB::select(DB::raw("SELECT id FROM process_requests AS table2 WHERE status = 'ACTIVE' AND id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
+        $unasiggnedRequestsPart1 = DB::select(DB::raw("SELECT table2.id, table2.name, table2.status, JSON_EXTRACT(user.meta, '$.ein') as ein, table2.created_at, table2.updated_at, CONCAT(user.firstname, ' ', user.lastname) as fullname, JSON_EXTRACT(user.meta, '$.agency') as agency FROM process_requests AS table2, users as user WHERE table2.status = 'ACTIVE' AND table2.user_id = user.id AND table2.id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
 
         $unasiggnedRequestsPart2 = DB::table('process_request_tokens')
             ->join('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
-            ->select('process_request_tokens.process_request_id as id')
+            ->join('process_requests', 'users.user_id', '=', 'users.id')
+            ->select('process_request_tokens.process_request_id as id,
+                process_requests.name as name,
+                process_requests.status as status,
+                users.meta->ein as ein,
+                process_requests.created_at as created_at,
+                process_requests.updated_at as updated_at,
+                DB::raw("CONCAT(users.meta->firstname, \" \", users.meta->lasname")) as fullname,
+                users.meta->agency as agency')
             ->where('process_requests.status', 'ACTIVE')
             ->where('process_request_tokens.element_type', 'gateway')
             ->where('process_request_tokens.status', 'INCOMING')

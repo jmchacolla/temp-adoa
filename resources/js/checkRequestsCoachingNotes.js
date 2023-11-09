@@ -58,7 +58,7 @@ $(document).ready(function () {
             } else {
                 ProcessMaker.apiClient.get('adoa/get-open-task/' + ProcessMaker.user.id + '/' + $(this).find('td').eq(0)[0].innerText).then(responseTask => {
                     if (responseTask.data.length == 0) {
-                        ProcessMaker.alert('You can not open this request, because ' + $(this).find('td').eq(7)[0].innerText + ' is the owner.', 'warning', '15');
+                        ProcessMaker.alert('You do not have permission to open this request.', 'warning', '15');
                     } else {
                         window.location = $(this).find('.fa-external-link-square-alt').parent().attr('href');
                     }
@@ -75,7 +75,7 @@ $(document).ready(function () {
         } else {
             ProcessMaker.apiClient.get('adoa/get-open-task/' + ProcessMaker.user.id + '/' + $(this).find('td').eq(0)[0].innerText).then(responseTask => {
                 if (responseTask.data.length == 0) {
-                    ProcessMaker.alert('You can not open this request, because other user is the owner.', 'warning', '15');
+                    ProcessMaker.alert('You do not have permission to open this request.', 'warning', '15');
                 } else {
                     window.location = $(this).find('.fa-external-link-square-alt').parent().attr('href');
                 }
