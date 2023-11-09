@@ -19,3 +19,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('adoa/rwa-report', 'AdoaRwaReportController@index')->name('package.adoa.tab.rwa-report');
     Route::get('adoa/agency-dashboard/{groupId}', 'AdoaController@getListRequestsAgencyDashboard');
 });
+
+Route::get('training/videos', function () {
+    return redirect()->away('https://docs.google.com/presentation/d/1IF6dOQ6Soj0ZKRSAvrHuZ-ZQPBC-gPd1JNeVfSoC-PA/edit?usp=sharing');
+})->name('training.redirect.videos');
+
+Route::get('training/faq', function () {
+    return redirect()->away('https://docs.google.com/document/d/1d7YDzm9W-vuf5hYb7_HHCr0si1mcCerjEVtX2cw1KIs/edit?usp=sharing');
+})->name('training.redirect.faq');

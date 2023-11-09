@@ -51,7 +51,7 @@
                                 <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
                                 <td class="text-left">{{ $request->task_status }}</td>
                                 <td class="text-right">
-                                    <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Open request"></i></a>
+                                    <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Go To Document"></i></a>
                                 </td>
                             </tr>
                         @endif

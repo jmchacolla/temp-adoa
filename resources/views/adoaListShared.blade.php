@@ -75,8 +75,8 @@
                                     <td class="text-left">{{ $newCompletedDateFormat }}</td>
                                     <td class="text-right">
                                         @if (!empty($request->file_id) || !is_null($request->file_id))
-                                            <a href="#"><i class="fas fa-eye" style="color: #71A2D4;" title="View Document" onclick="viewPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
-                                            <a href="#"><i class="fas fa-print" style="color: #71A2D4;" title="Print Document" onclick="printPdf({{ $request->request_id }}, {{ $request->file_id }});"></i></a>&nbsp;
+                                            <a href="javascript: viewPdf({{ $request->request_id }}, {{ $request->file_id }});"><i class="fas fa-eye" style="color: #71A2D4;" title="View Document"></i></a>&nbsp;
+                                            <a href="javascript: printPdf({{ $request->request_id }}, {{ $request->file_id }});"><i class="fas fa-print" style="color: #71A2D4;" title="Print Document"></i></a>&nbsp;
                                             <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download Document"></i></a>&nbsp;
                                         @endif
                                     </td>
