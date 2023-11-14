@@ -43,11 +43,9 @@ class PackageServiceProvider extends ServiceProvider
         $this->setGroupIds();
 
         if ($this->app->runningInConsole()) {
-            require(__DIR__ . '/../routes/console.php');
-//            $this->commands([
-//                Console\Commands\Install::class,
-//                Console\Commands\Uninstall::class,
-//            ]);
+            $this->commands([
+                Console\Commands\Install::class,
+            ]);
         } else {
             // Assigning to the web middleware will ensure all other middleware assigned to 'web'
             // will execute. If you wish to extend the user interface, you'll use the web middleware
