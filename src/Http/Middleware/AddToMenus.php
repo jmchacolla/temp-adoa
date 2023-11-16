@@ -62,7 +62,7 @@ class AddToMenus
             'icon' => 'fa-share-square',
         ]);
 
-        $submenu->add(__('Just-in-Time Training Videos'), [
+        /*$submenu->add(__('Just-in-Time Training Videos'), [
             'route' => ['training.redirect.videos'],
             'icon' => 'fa-solid fa-video',
             'target' => '_blank'
@@ -72,7 +72,7 @@ class AddToMenus
             'route' => ['training.redirect.faq'],
             'icon' => 'fa-question-circle',
             'target' => '_blank'
-        ]);
+        ]);*/
 
         if ($this->inAgencyGroup) {
             $submenu->add(__('Agency Requests'), [
