@@ -92,6 +92,10 @@ class PackageServiceProvider extends ServiceProvider
 
     private function setGroupIds()
     {
+        if (!empty(env('BUILDING_IMAGE', false))) {
+            return;
+        }
+
         if (! $id = Cache::get('adoa.admin_group_id')) {
             $id = optional(Group::where('name', 'LIKE', '%Administrators%')->first())->id;
             Cache::put('adoa.admin_group_id', $id);
