@@ -141,7 +141,7 @@
             </div>
 
             <div class="col-lg-12 col-md-12 col-sm-12" style="text-align: center" v-if="adoaEmployeeSelected != ''">
-                <button id="btnGetList" class="btn btn-primary btn-sm"  @click="getRwaList">Get List</button>
+                <button id="btnGetList" class="btn btn-primary btn-sm" @click="getRwaList">Get List</button>
             </div>
 
         </div>
@@ -156,7 +156,7 @@
             </div>
         </div>
         <div id="emptyRwaList" class="alert alert-info" role="alert" style="width:80%;margin:auto;" v-if="showList == true && rwaList.length <= 0">
-            <span><i class="fas fa-info-circle"></i> There are no RWAs available for {{ adoaEmployeeName }} from the time period you selected. Please change the search criteria and try again.</span>
+            <span><i class="fas fa-info-circle"></i> There are no RWAs available for @{{ adoaEmployeeName }} from the time period you selected. Please change the search criteria and try again.</span>
         </div>
     </div>
     {{-- Modal View PDF --}}
