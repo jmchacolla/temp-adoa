@@ -848,7 +848,7 @@ class AdoaController extends Controller
                 users.meta->ein as ein,
                 process_requests.created_at as created_at,
                 process_requests.updated_at as updated_at,
-                DB::raw("CONCAT(users.meta->firstname, \" \", users.meta->lasname")) as fullname,
+                users.meta->firstname as fullname,
                 users.meta->agency as agency')
             ->where('process_requests.status', 'ACTIVE')
             ->where('process_request_tokens.element_type', 'gateway')
