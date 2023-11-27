@@ -1,7 +1,7 @@
 <?php
 
 Route::group(['middleware' => ['auth:api', 'bindings']], function() {
-    Route::get('admin/adoa/fetch', 'AdoaController@fetch')->name('package.skeleton.fetch');
+    Route::get('admin/adoa/fetch', 'AdoaController@fetch')->name('package.customer.adoa.fetch');
     Route::apiResource('admin/adoa', 'AdoaController');
     Route::get('adoa/employee-list/{id}', 'AdoaUsersController@getUsersIdFullname');
     Route::get('adoa/user/{id}', 'AdoaUsersController@getUser');
