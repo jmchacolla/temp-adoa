@@ -40,3 +40,5 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::get('adoa/expiration-agreement/{collectionId}', 'AdoaController@getValidAgreement');
     Route::get('adoa/unasiggned', 'AdoaController@getRequestsUnassigned');
 });
+
+Route::get('adoa/agency-dashboard/{groupId}', 'AdoaController@getListRequestsAgencyDashboard');
