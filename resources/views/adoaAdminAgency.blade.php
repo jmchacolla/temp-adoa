@@ -648,9 +648,10 @@
                             "pageLength": 25,
                             "destroy": true,
                             "ajax": {
-                                "url": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
+                                "url": "{{ url('/api/1.0/adoa/agency-dashboard') }}/{{ $groupId }}",
                                 "type": "GET",
                                 "data": {
+                                    "userLogged": {!! Auth::user() !!},
                                     "filterEmployeeName": $("#filterEmployeeName").val(),
                                     "filterEIN": $("#filterEIN").val(),
                                     "filterRequestId": $("#filterRequestId").val(),

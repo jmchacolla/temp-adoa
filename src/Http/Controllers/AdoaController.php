@@ -226,14 +226,6 @@ class AdoaController extends Controller
                 'media.id AS file_id',
                 'media.custom_properties')
             ->where('media.disk', 'public')
-            // ->where(function ($query) {
-            //     $query->where('media.name', 'like', 'Formal_Appraisal_%')
-            //         ->orWhere('media.name', 'like', 'Informal_Appraisal_%')
-            //         ->orWhere('media.name', 'like', 'Coaching_Note_%')
-            //         ->orWhere('media.name', 'like', 'Coaching_Note_%')
-            //         ->orWhere('media.name', 'like', 'Self_Appraisal_%')
-            //         ->orWhere('media.name', 'Remote_Work_Agreement');
-            // })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
@@ -482,17 +474,17 @@ class AdoaController extends Controller
     }
 
     public function getListRequestsAgencyDashboard($groupId, Request $request) {
-        $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
+        $member = $this->getGroupAdminAgency($request->input('userLogged')['id'], $groupId);
         if (count($member) > 0 && $groupId == config('adoa.agency_admin_group_id')) {
             //Getting Agency Information from meta data
             if (empty($request->input('filterAgency'))) {
-                $agencies = explode(',', Auth::user()->meta->agency);
+                $agencies = explode(',', $request->input('userLogged')['meta']['agency']);
             } else {
                 $agencies = $request->input('filterAgency');
             }
 
             //Getting Agency Information from meta data
-            $processes = explode(',', Auth::user()->meta->pm_process_id);
+            $processes = explode(',', $request->input('userLogged')['meta']['pm_process_id']);
             $processesArray = array();
 
             if (count($processes) == 1 && $processes[0] == 'ALL') {
@@ -506,7 +498,7 @@ class AdoaController extends Controller
 
             //Getting Agency Information from meta data
             if (empty($request->input('filterLevel'))) {
-                $levels = explode(',', Auth::user()->meta->employee_process_level);
+                $levels = explode(',', $request->input('userLogged')['meta']['employee_process_level']);
             } else {
                 $levels = $request->input('filterLevel');
             }
@@ -642,14 +634,6 @@ class AdoaController extends Controller
                         ->select('id AS file_id',
                             'custom_properties')
                         ->where('model_id', $request->request_id)
-                        // ->where(function ($query) {
-                        //     $query->where('name', 'like', 'Formal_Appraisal_%')
-                        //         ->orWhere('name', 'like', 'Informal_Appraisal_%')
-                        //         ->orWhere('name', 'like', 'Coaching_Note_%')
-                        //         ->orWhere('name', 'like', 'Coaching_Note_%')
-                        //         ->orWhere('name', 'like', 'Self_Appraisal_%')
-                        //         ->orWhere('name', 'Remote_Work_Agreement');
-                        // })
                         ->get();
     
                     $request->task_id = null;
@@ -848,7 +832,7 @@ class AdoaController extends Controller
                 users.meta->ein as ein,
                 process_requests.created_at as created_at,
                 process_requests.updated_at as updated_at,
-                users.meta->firstname as fullname,
+                users.firstname as fullname,
                 users.meta->agency as agency')
             ->where('process_requests.status', 'ACTIVE')
             ->where('process_request_tokens.element_type', 'gateway')
