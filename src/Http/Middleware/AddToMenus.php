@@ -37,6 +37,7 @@ class AddToMenus
         $groups = Auth::user()->groups->pluck('id');
         $this->inAdminGroup = $groups->contains(config('adoa.admin_group_id'));
         $this->inAgencyGroup = $groups->contains(config('adoa.agency_admin_group_id'));
+        $this->inManagerGroup = $groups->contains(config('adoa.manager_group_id'));
     }
 
     private function clearMenu(Builder $menu)
@@ -74,15 +75,17 @@ class AddToMenus
             'target' => '_blank'
         ]);*/
 
-        if ($this->inAgencyGroup) {
-            $submenu->add(__('Agency Requests'), [
-                'route' => ['package.adoa.agencyRequests', 'groupId' => config('adoa.agency_admin_group_id')],
-                'icon' => 'fa-laptop-house',
-            ]);
-
+        if ($this->inManagerGroup) {
             $submenu->add(__('Requests from My Direct Reports'), [
                 'route' => ['package.adoa.directReports', 'groupId' => config('adoa.agency_admin_group_id')],
                 'icon' => 'fa-users',
+            ]);
+        }
+
+        if ($this->inAgencyGroup) {
+            $submenu->add(__('Agency Requests'), [
+                'route' => ['package.adoa.agencyRequests'],
+                'icon' => 'fa-laptop-house',
             ]);
         }
     }

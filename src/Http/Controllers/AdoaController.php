@@ -919,7 +919,7 @@ class AdoaController extends Controller
             ->get();
 
         $finalRequestList = array();
-        foreach ($adoaListRequests as $request) {
+        foreach ($adoaListDirectReport as $request) {
             if($request->request_status == 'ACTIVE') {
                 $listRequestTokens = DB::table('process_request_tokens')
                     ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
