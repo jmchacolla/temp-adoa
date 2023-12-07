@@ -79,6 +79,11 @@ class AddToMenus
                 'route' => ['package.adoa.agencyRequests', 'groupId' => config('adoa.agency_admin_group_id')],
                 'icon' => 'fa-laptop-house',
             ]);
+
+            $submenu->add(__('Requests from My Direct Reports'), [
+                'route' => ['package.adoa.directReports', 'groupId' => config('adoa.agency_admin_group_id')],
+                'icon' => 'fa-users',
+            ]);
         }
     }
 }

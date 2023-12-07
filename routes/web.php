@@ -9,6 +9,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('adoa/dashboard/requests', 'AdoaController@getListRequests')->name('package.adoa.listRequests');
     Route::get('adoa/dashboard/todo', 'AdoaController@getListToDo')->name('package.adoa.listToDo');
     Route::get('adoa/dashboard/shared-with-me', 'AdoaController@getListShared')->name('package.adoa.sharedWithMe');
+    Route::get('adoa/dashboard/manager', 'AdoaController@getListDirectReports')->name('package.adoa.directReports');
     Route::get('adoa/print/{request}/{media}', 'AdoaController@printFile');
     Route::get('adoa/view/{request}/{media}', 'AdoaController@viewFile');
     Route::get('adoa/view-pdf/{request}', 'AdoaController@getFile')->name('package.adoa.getPdfFile');
