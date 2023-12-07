@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Log;
-use ProcessMaker\Jobs\ThrowSignalEvent;
+use ProcessMaker\Facades\WorkflowManager;
 use ProcessMaker\Models\User;
 use ProcessMaker\Models\EnvironmentVariable;
 use Throwable;
@@ -59,7 +59,7 @@ class MigrateUsers implements ShouldQueue
         $this->deactivateExistingUsers();
         $this->importAdoaExternalUsers([$this, 'saveUserInformation']);
 
-        ThrowSignalEvent::dispatch('adoa_migration', [
+        WorkflowManager::throwSignalEvent('adoa_migration', [
             'created_users' => $this->createdUsers,
             'updated_users' => $this->updatedUsers,
         ]);
