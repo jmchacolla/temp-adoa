@@ -77,14 +77,14 @@ class AddToMenus
 
         if ($this->inManagerGroup) {
             $submenu->add(__('Requests from My Direct Reports'), [
-                'route' => ['package.adoa.directReports', 'groupId' => config('adoa.agency_admin_group_id')],
+                'route' => ['package.adoa.directReports'],
                 'icon' => 'fa-users',
             ]);
         }
 
         if ($this->inAgencyGroup) {
             $submenu->add(__('Agency Requests'), [
-                'route' => ['package.adoa.agencyRequests'],
+                'route' => ['package.adoa.agencyRequests', 'groupId' => config('adoa.agency_admin_group_id')],
                 'icon' => 'fa-laptop-house',
             ]);
         }
