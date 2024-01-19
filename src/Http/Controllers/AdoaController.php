@@ -474,17 +474,17 @@ class AdoaController extends Controller
     }
 
     public function getListRequestsAgencyDashboard($groupId, Request $request) {
-        $member = $this->getGroupAdminAgency($request->input('userLogged')['id'], $groupId);
+        $member = $this->getGroupAdminAgency($request->input('userId'), $groupId);
         if (count($member) > 0 && $groupId == config('adoa.agency_admin_group_id')) {
             //Getting Agency Information from meta data
             if (empty($request->input('filterAgency'))) {
-                $agencies = explode(',', $request->input('userLogged')['meta']['agency']);
+                $agencies = explode(',', $request->input('userAgency'));
             } else {
                 $agencies = $request->input('filterAgency');
             }
 
             //Getting Agency Information from meta data
-            $processes = explode(',', $request->input('userLogged')['meta']['pm_process_id']);
+            $processes = explode(',', $request->input('processId'));
             $processesArray = array();
 
             if (count($processes) == 1 && $processes[0] == 'ALL') {
@@ -498,14 +498,14 @@ class AdoaController extends Controller
 
             //Getting Agency Information from meta data
             if (empty($request->input('filterLevel'))) {
-                $levels = explode(',', $request->input('userLogged')['meta']['employee_process_level']);
+                $levels = explode(',', $request->input('processLevel'));
             } else {
                 $levels = $request->input('filterLevel');
             }
 
             //Query to get requests for agency admin
             $adoaListRequestsAgency = DB::table('process_requests')
-            ->join('processes', 'process_requests.process_id', '=', 'processes.id')
+            ->joi->leftjoin('processes', 'process_requests.process_id', '=', 'processes.id')
             ->select('process_requests.id as request_id',
                 'process_requests.process_id',
                 'process_requests.name',
