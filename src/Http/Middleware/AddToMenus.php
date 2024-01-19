@@ -75,12 +75,12 @@ class AddToMenus
             'target' => '_blank'
         ]);*/
 
-        if ($this->inManagerGroup) {
+        /*if ($this->inManagerGroup) {
             $submenu->add(__('Requests from My Direct Reports'), [
                 'route' => ['package.adoa.directReports'],
                 'icon' => 'fa-users',
             ]);
-        }
+        }*/
 
         if ($this->inAgencyGroup) {
             $submenu->add(__('Agency Requests'), [
