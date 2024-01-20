@@ -505,7 +505,7 @@ class AdoaController extends Controller
 
             //Query to get requests for agency admin
             $adoaListRequestsAgency = DB::table('process_requests')
-            ->joi->leftjoin('processes', 'process_requests.process_id', '=', 'processes.id')
+            ->leftjoin('processes', 'process_requests.process_id', '=', 'processes.id')
             ->select('process_requests.id as request_id',
                 'process_requests.process_id',
                 'process_requests.name',
