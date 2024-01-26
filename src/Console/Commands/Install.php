@@ -15,7 +15,7 @@ class Install extends PackageInstallCommand
      *
      * @var string
      */
-    protected $signature = 'adoa:install';
+    protected $signature = 'customer-adoa:install';
 
     /**
      * The console command description.
