@@ -39,7 +39,7 @@ class AdoaRwaReportController extends Controller
     public function getRwaByEmployeByEin (Request $request)
     {
         try {
-            $userEin    = !empty($request->get('userEin')) ? $request->get('userEin') :  '';
+            $userEin    = !empty($request->get('userEin')) ? $request->get('userEin') : '';
 
             $query = AdoaProcessRequest::select('process_requests.data->EMPLOYEE_LAST_NAME as lastname',
                 'process_requests.data->EMPLOYEE_FIRST_NAME as firstname',

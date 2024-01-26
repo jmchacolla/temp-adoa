@@ -226,14 +226,6 @@ class AdoaController extends Controller
                 'media.id AS file_id',
                 'media.custom_properties')
             ->where('media.disk', 'public')
-            // ->where(function ($query) {
-            //     $query->where('media.name', 'like', 'Formal_Appraisal_%')
-            //         ->orWhere('media.name', 'like', 'Informal_Appraisal_%')
-            //         ->orWhere('media.name', 'like', 'Coaching_Note_%')
-            //         ->orWhere('media.name', 'like', 'Coaching_Note_%')
-            //         ->orWhere('media.name', 'like', 'Self_Appraisal_%')
-            //         ->orWhere('media.name', 'Remote_Work_Agreement');
-            // })
             ->where('process_requests.status', 'COMPLETED')
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
@@ -482,17 +474,17 @@ class AdoaController extends Controller
     }
 
     public function getListRequestsAgencyDashboard($groupId, Request $request) {
-        $member = $this->getGroupAdminAgency(Auth::user()->id, $groupId);
+        $member = $this->getGroupAdminAgency($request->input('userId'), $groupId);
         if (count($member) > 0 && $groupId == config('adoa.agency_admin_group_id')) {
             //Getting Agency Information from meta data
             if (empty($request->input('filterAgency'))) {
-                $agencies = explode(',', Auth::user()->meta->agency);
+                $agencies = explode(',', $request->input('userAgency'));
             } else {
                 $agencies = $request->input('filterAgency');
             }
 
             //Getting Agency Information from meta data
-            $processes = explode(',', Auth::user()->meta->pm_process_id);
+            $processes = explode(',', $request->input('processId'));
             $processesArray = array();
 
             if (count($processes) == 1 && $processes[0] == 'ALL') {
@@ -506,14 +498,14 @@ class AdoaController extends Controller
 
             //Getting Agency Information from meta data
             if (empty($request->input('filterLevel'))) {
-                $levels = explode(',', Auth::user()->meta->employee_process_level);
+                $levels = explode(',', $request->input('processLevel'));
             } else {
                 $levels = $request->input('filterLevel');
             }
 
             //Query to get requests for agency admin
             $adoaListRequestsAgency = DB::table('process_requests')
-            ->join('processes', 'process_requests.process_id', '=', 'processes.id')
+            ->leftjoin('processes', 'process_requests.process_id', '=', 'processes.id')
             ->select('process_requests.id as request_id',
                 'process_requests.process_id',
                 'process_requests.name',
@@ -642,14 +634,6 @@ class AdoaController extends Controller
                         ->select('id AS file_id',
                             'custom_properties')
                         ->where('model_id', $request->request_id)
-                        // ->where(function ($query) {
-                        //     $query->where('name', 'like', 'Formal_Appraisal_%')
-                        //         ->orWhere('name', 'like', 'Informal_Appraisal_%')
-                        //         ->orWhere('name', 'like', 'Coaching_Note_%')
-                        //         ->orWhere('name', 'like', 'Coaching_Note_%')
-                        //         ->orWhere('name', 'like', 'Self_Appraisal_%')
-                        //         ->orWhere('name', 'Remote_Work_Agreement');
-                        // })
                         ->get();
     
                     $request->task_id = null;
@@ -837,18 +821,18 @@ class AdoaController extends Controller
     }
 
     public function getRequestsUnassigned() {
-        $unasiggnedRequestsPart1 = DB::select(DB::raw("SELECT table2.id, table2.name, table2.status, JSON_EXTRACT(user.meta, '$.ein') as ein, table2.created_at, table2.updated_at, CONCAT(user.firstname, ' ', user.lastname) as fullname, JSON_EXTRACT(user.meta, '$.agency') as agency FROM process_requests AS table2, users as user WHERE table2.status = 'ACTIVE' AND table2.user_id = user.id AND table2.id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
+        $unassignedRequestsPart1 = DB::select(DB::raw("SELECT table2.id, table2.name, table2.status, JSON_EXTRACT(user.meta, '$.ein') as ein, table2.created_at, table2.updated_at, CONCAT(user.firstname, ' ', user.lastname) as fullname, JSON_EXTRACT(user.meta, '$.agency') as agency FROM process_requests AS table2, users as user WHERE table2.status = 'ACTIVE' AND table2.user_id = user.id AND table2.id IN (SELECT table1.process_request_id FROM (SELECT process_request_id, COUNT(CASE WHEN status = 'ACTIVE' THEN 'ACTIVES' ELSE NULL END) AS 'ACTIVES', COUNT(CASE WHEN status != 'ACTIVE' THEN 'INACTIVES' ELSE NULL END) AS 'INACTIVES' FROM process_request_tokens WHERE process_request_tokens.process_id in (" . EnvironmentVariable::whereName('process_ids_unassigned')->first()->value . ") GROUP BY process_request_id) AS table1 WHERE ACTIVES = 0);"));
 
-        $unasiggnedRequestsPart2 = DB::table('process_request_tokens')
+        $unassignedRequestsPart2 = DB::table('process_request_tokens')
             ->join('process_requests', 'process_request_tokens.process_request_id', '=', 'process_requests.id')
-            ->join('process_requests', 'users.user_id', '=', 'users.id')
+            ->join('users', 'process_request_tokens.user_id', '=', 'users.id')
             ->select('process_request_tokens.process_request_id as id,
                 process_requests.name as name,
                 process_requests.status as status,
                 users.meta->ein as ein,
                 process_requests.created_at as created_at,
                 process_requests.updated_at as updated_at,
-                DB::raw("CONCAT(users.meta->firstname, \" \", users.meta->lasname")) as fullname,
+                users.firstname as fullname,
                 users.meta->agency as agency')
             ->where('process_requests.status', 'ACTIVE')
             ->where('process_request_tokens.element_type', 'gateway')
@@ -857,7 +841,7 @@ class AdoaController extends Controller
             ->get()
             ->toArray();
 
-        return array_merge($unasiggnedRequestsPart1, $unasiggnedRequestsPart2);
+        return array_merge($unassignedRequestsPart1, $unassignedRequestsPart2);
     }
 
     public function getProcessId($processesArray) {
@@ -904,4 +888,99 @@ class AdoaController extends Controller
             return $response['error'] = 'There are errors in the Function: getAdoaPositionsByFilter ' . $error->getMessage();
         }
     }
+
+    public function getListDirectReports() {
+        $adoaListUsersDirectReport = DB::table('users')
+            ->select('id')
+            ->where('meta->super_position', Auth::user()->meta->position)
+            ->get()
+            ->toArray();
+
+        $listDirectReport = array();
+
+        foreach ($adoaListUsersDirectReport as $directReport) {
+            $listDirectReport[] = $directReport->id;
+        }
+
+        $adoaListDirectReport = DB::table('process_requests')
+            ->join('processes', 'process_requests.process_id', '=', 'processes.id')
+            ->select('process_requests.id as request_id',
+                'process_requests.process_id',
+                'process_requests.name',
+                'process_requests.status as request_status',
+                'process_requests.data',
+                'process_requests.created_at',
+                'process_requests.completed_at')
+            ->whereNotIn('processes.process_category_id', [1, 2])
+            ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
+            ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
+            ->whereIn('process_requests.user_id', $listDirectReport)
+            ->orderBy('process_requests.id', 'desc')
+            ->get();
+
+        $finalRequestList = array();
+        foreach ($adoaListDirectReport as $request) {
+            if($request->request_status == 'ACTIVE') {
+                $listRequestTokens = DB::table('process_request_tokens')
+                    ->leftJoin('users', 'process_request_tokens.user_id', '=', 'users.id')
+                    ->select('process_request_tokens.id as task_id',
+                        'process_request_tokens.element_name',
+                        'process_request_tokens.element_type',
+                        'process_request_tokens.status as task_status',
+                        'process_request_tokens.user_id as user_id',
+                        'users.firstname',
+                        'users.lastname')
+                    ->where('process_request_tokens.element_type', 'task')
+                    ->where('process_request_tokens.process_request_id', $request->request_id)
+                    ->where('process_request_tokens.status', 'ACTIVE')
+                    ->get();
+                
+                if (count($listRequestTokens) > 0) {
+                    foreach ($listRequestTokens as $requestToken) {
+                        $request->file_id = null;
+                        $request->custom_properties = null;
+                        $request = (object) array_merge((array) $request, (array) $requestToken);
+                        $finalRequestList[] = $request;
+                    }
+                } else {
+                    $request->task_id = null;
+                    $request->element_name = null;
+                    $request->element_type = null;
+                    $request->task_status = 'ACTIVE';
+                    $request->user_id = null;
+                    $request->firstname = null;
+                    $request->lastname = null;
+                    $request->file_id = null;
+                    $request->custom_properties = null;
+                    $finalRequestList[] = $request;
+                }
+            } else {
+                $listRequestTokens = DB::table('media')
+                    ->select('id AS file_id',
+                        'custom_properties')
+                    ->where('model_id', $request->request_id)
+                    ->get();
+
+                $request->task_id = null;
+                $request->element_name = 'Completed';
+                $request->element_type = null;
+                $request->task_status = 'COMPLETED';
+                $request->user_id = null;
+                $request->firstname = null;
+                $request->lastname = null;
+
+                if (count($listRequestTokens) == 0) {
+                    $request->file_id = null;
+                    $request->custom_properties = null;
+                } else {
+                    $request->file_id = $listRequestTokens[0]->file_id;
+                    $request->custom_properties = $listRequestTokens[0]->custom_properties;
+                }
+                $finalRequestList[] = $request;
+            }
+        }
+
+        return view('adoa::adoaListManager', ['adoaListRequests' => $finalRequestList, 'process_id_terminate_rwa_send_email_and_pdf' => EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value]);
+    }
+
 }

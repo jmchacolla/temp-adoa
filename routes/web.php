@@ -9,6 +9,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('adoa/dashboard/requests', 'AdoaController@getListRequests')->name('package.adoa.listRequests');
     Route::get('adoa/dashboard/todo', 'AdoaController@getListToDo')->name('package.adoa.listToDo');
     Route::get('adoa/dashboard/shared-with-me', 'AdoaController@getListShared')->name('package.adoa.sharedWithMe');
+    Route::get('adoa/dashboard/manager', 'AdoaController@getListDirectReports')->name('package.adoa.directReports');
     Route::get('adoa/print/{request}/{media}', 'AdoaController@printFile');
     Route::get('adoa/view/{request}/{media}', 'AdoaController@viewFile');
     Route::get('adoa/view-pdf/{request}', 'AdoaController@getFile')->name('package.adoa.getPdfFile');
@@ -17,7 +18,6 @@ Route::group(['middleware' => ['auth']], function () {
     ////--- RWA
     // https://pm4-3315.processmaker.net/adoa/rwa-report
     Route::get('adoa/rwa-report', 'AdoaRwaReportController@index')->name('package.adoa.tab.rwa-report');
-    Route::get('adoa/agency-dashboard/{groupId}', 'AdoaController@getListRequestsAgencyDashboard');
 });
 
 Route::get('training/videos', function () {

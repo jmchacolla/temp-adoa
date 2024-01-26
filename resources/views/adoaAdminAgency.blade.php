@@ -648,9 +648,13 @@
                             "pageLength": 25,
                             "destroy": true,
                             "ajax": {
-                                "url": "{{ url('adoa/agency-dashboard') }}/{{ $groupId }}",
+                                "url": "{{ url('/api/1.0/adoa/agency-dashboard') }}/{{ $groupId }}",
                                 "type": "GET",
                                 "data": {
+                                    "userId": {!! Auth::user()->id !!},
+                                    "userAgency": '{!! Auth::user()->meta->agency !!}',
+                                    "processId": '{!! Auth::user()->meta->pm_process_id !!}',
+                                    "processLevel": '{!! Auth::user()->meta->employee_process_level !!}',
                                     "filterEmployeeName": $("#filterEmployeeName").val(),
                                     "filterEIN": $("#filterEIN").val(),
                                     "filterRequestId": $("#filterRequestId").val(),
