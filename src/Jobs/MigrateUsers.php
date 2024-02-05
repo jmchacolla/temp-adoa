@@ -15,6 +15,7 @@ use ProcessMaker\Facades\WorkflowManager;
 use ProcessMaker\Models\User;
 use ProcessMaker\Models\EnvironmentVariable;
 use Throwable;
+use DB;
 
 class MigrateUsers implements ShouldQueue
 {
@@ -119,85 +120,108 @@ class MigrateUsers implements ShouldQueue
     {
         $user = $this->newOrExistingUser($import);
         $id = array_search($import['EMPLOYEE'], $this->users);
-
-        if ($id !== false) {
-            $user->fill([
-                'email' => $this->generateEmail($import),
-                'firstname' => trim($import['FIRST_NAME']),
-                'lastname' => trim($import['LAST_NAME']),
-                'username' => trim($import['EMPLOYEE']),
-                //'password' => $this->password,
-                'address' => trim($import['ADDRESS']),
-                'phone' => trim($import['WORK_PHONE']),
-                'is_administrator' => false,
-                'status' => 'ACTIVE',
-                'meta' => [
-                    'ein' => trim($import['EMPLOYEE']),
-                    'email' => trim($import['WORK_EMAIL']),
-                    'position' => trim($import['POSITION']),
-                    'manager' => trim($import['MANAGER']),
-                    'super_position' => trim($import['SUPER_POSITION']),
-                    'title' => trim($import['TITLE']),
-                    'agency' => trim($import['AGENCY']),
-                    'agency_name' => trim($import['AGENCY_NAME']),
-                    'process_level' => trim($import['PROCESS_LEVEL']),
-                    'department' => trim($import['DEPARTMENT']),
-                    'term_date' => trim($import['TERM_DATE']),
-                    'flsa_status' => trim($import['FLSA_STATUS']),
-                    'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-                ]
-            ]);
-        } else {
-            $user->fill([
-                'email' => $this->generateEmail($import),
-                'firstname' => trim($import['FIRST_NAME']),
-                'lastname' => trim($import['LAST_NAME']),
-                'username' => trim($import['EMPLOYEE']),
-                //'password' => $this->password,
-                'password' => 'p^@)YUvVB"j4.J*F',
-                'address' => trim($import['ADDRESS']),
-                'phone' => trim($import['WORK_PHONE']),
-                'is_administrator' => false,
-                'status' => 'ACTIVE',
-                'timezone' => 'America/Phoenix',
-                'meta' => [
-                    'ein' => trim($import['EMPLOYEE']),
-                    'email' => trim($import['WORK_EMAIL']),
-                    'position' => trim($import['POSITION']),
-                    'manager' => trim($import['MANAGER']),
-                    'super_position' => trim($import['SUPER_POSITION']),
-                    'title' => trim($import['TITLE']),
-                    'agency' => trim($import['AGENCY']),
-                    'agency_name' => trim($import['AGENCY_NAME']),
-                    'process_level' => trim($import['PROCESS_LEVEL']),
-                    'department' => trim($import['DEPARTMENT']),
-                    'term_date' => trim($import['TERM_DATE']),
-                    'flsa_status' => trim($import['FLSA_STATUS']),
-                    'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-                ]
-            ]);
-        }
-
         try {
-            $user->save();
+            if ($id !== false) {
+                DB::table('users')
+                ->where('id', $id)
+                ->update([
+                    'email' => $this->generateEmail($import),
+                    'firstname' => trim($import['FIRST_NAME']),
+                    'lastname' => trim($import['LAST_NAME']),
+                    'username' => trim($import['EMPLOYEE']),
+                    //'password' => $this->password,
+                    'address' => trim($import['ADDRESS']),
+                    'phone' => trim($import['WORK_PHONE']),
+                    'is_administrator' => false,
+                    'status' => 'ACTIVE',
+                    'meta' => [
+                        'ein' => trim($import['EMPLOYEE']),
+                        'email' => trim($import['WORK_EMAIL']),
+                        'position' => trim($import['POSITION']),
+                        'manager' => trim($import['MANAGER']),
+                        'super_position' => trim($import['SUPER_POSITION']),
+                        'title' => trim($import['TITLE']),
+                        'agency' => trim($import['AGENCY']),
+                        'agency_name' => trim($import['AGENCY_NAME']),
+                        'process_level' => trim($import['PROCESS_LEVEL']),
+                        'department' => trim($import['DEPARTMENT']),
+                        'term_date' => trim($import['TERM_DATE']),
+                        'flsa_status' => trim($import['FLSA_STATUS']),
+                        'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
+                    ]
+                ]);
+
+                $findRow = DB::table('group_members')
+                    ->where('member_id', $id)
+                    ->where('group_id', config('adoa.manager_group_id'))
+                    ->first();
+
+                if (trim($import['MANAGER']) == 'Y' && count($findRow) == 0) {
+                    DB::table('group_members')
+                    ->insert([
+                        'group_id' => config('adoa.manager_group_id'),
+                        'member_type' => 'ProcessMaker\Models\User',
+                        'member_id' => $newUserId->id,
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => null
+                    ]);
+                } elseif (trim($import['MANAGER']) == 'N' && count($findRow) > 0) {
+                    DB::table('group_members')
+                        ->where('id', $findRow->id)
+                        ->delete();
+                }
+            } else {
+                $newUserId = DB::table('users')
+                ->insert([
+                    'email' => $this->generateEmail($import),
+                    'firstname' => trim($import['FIRST_NAME']),
+                    'lastname' => trim($import['LAST_NAME']),
+                    'username' => trim($import['EMPLOYEE']),
+                    'password' => 'p^@)YUvVB"j4.J*F',
+                    'address' => trim($import['ADDRESS']),
+                    'phone' => trim($import['WORK_PHONE']),
+                    'is_administrator' => false,
+                    'status' => 'ACTIVE',
+                    'timezone' => 'America/Phoenix',
+                    'meta' => [
+                        'ein' => trim($import['EMPLOYEE']),
+                        'email' => trim($import['WORK_EMAIL']),
+                        'position' => trim($import['POSITION']),
+                        'manager' => trim($import['MANAGER']),
+                        'super_position' => trim($import['SUPER_POSITION']),
+                        'title' => trim($import['TITLE']),
+                        'agency' => trim($import['AGENCY']),
+                        'agency_name' => trim($import['AGENCY_NAME']),
+                        'process_level' => trim($import['PROCESS_LEVEL']),
+                        'department' => trim($import['DEPARTMENT']),
+                        'term_date' => trim($import['TERM_DATE']),
+                        'flsa_status' => trim($import['FLSA_STATUS']),
+                        'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
+                    ]
+                ]);
+
+                DB::table('group_members')
+                ->insert([
+                    'group_id' => config('adoa.employee_group_id'),
+                    'member_type' => 'ProcessMaker\Models\User',
+                    'member_id' => $newUserId->id,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => null
+                ]);
+
+                if (trim($import['MANAGER']) == 'Y') {
+                    DB::table('group_members')
+                    ->insert([
+                        'group_id' => config('adoa.manager_group_id'),
+                        'member_type' => 'ProcessMaker\Models\User',
+                        'member_id' => $newUserId->id,
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => null
+                    ]);
+                }
+            }
         } catch (Throwable $e) {
             Log::error('Unable to import ADOA user ' . $import['EMPLOYEE'], [
-                'error' => $e->getMessage(),
-                'adoa_user' => $import,
-            ]);
-        }
-
-        $groups = [];
-        $groups[] = config('adoa.employee_group_id');
-
-        if (trim($import['MANAGER']) == 'Y') {
-            $groups[] = config('adoa.manager_group_id');
-        }
-
-        try {
-            $user->groups()->sync($groups);
-        } catch (Throwable $e) {
-            Log::error('Unable to update groups for ADOA user ' . $import['EMPLOYEE'], [
                 'error' => $e->getMessage(),
                 'adoa_user' => $import,
             ]);
