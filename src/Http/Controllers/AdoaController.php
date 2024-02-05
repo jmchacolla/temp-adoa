@@ -124,7 +124,7 @@ class AdoaController extends Controller
                     ->where('process_request_tokens.process_request_id', $request->request_id)
                     ->where('process_request_tokens.status', 'ACTIVE')
                     ->get();
-                
+
                 if (count($listRequestTokens) > 0) {
                     foreach ($listRequestTokens as $requestToken) {
                         $request->file_id = null;
@@ -524,16 +524,18 @@ class AdoaController extends Controller
 
             $positionsArray = array();
             if ($agencies[0] != 'ALL' || $levels[0] != 'ALL') {
-                $positions = $this->getAdoaPositionsByFilter($agencies, $levels);
-
-                foreach ($positions->rows as $position) {
-                    $positionsArray[] = $position[0];
-                }
-            }
-
-            if (count($positionsArray) > 0) {
+                $collectionId = EnvironmentVariable::whereName('id_adoa_positions_collection')->first()->value;
                 $adoaListRequestsAgency = $adoaListRequestsAgency
-                ->whereIn('process_requests.POSITION_NUMBER', $positionsArray);
+                ->whereIn('process_requests.POSITION_NUMBER', function($query) use ($agencies, $levels, $collectionId) {
+                    $query->from('collection_' . $collectionId)
+                    ->select('data->POSITION as position')
+                    ->whereIn('data->AGENCY', $agencies);
+
+                    if (count($levels) > 0 && $levels[0] != 'ALL') {
+                        $query = $query
+                        ->whereIn('data->PROCESS_LEVEL', $levels);
+                    }
+                });
             }
 
             if (!empty($request->input('filterInitDate'))) {
@@ -611,7 +613,7 @@ class AdoaController extends Controller
                         ->where('process_request_tokens.process_request_id', $request->request_id)
                         ->where('process_request_tokens.status', 'ACTIVE')
                         ->get();
-                    
+
                     if (count($listRequestTokens) > 0) {
                         foreach ($listRequestTokens as $requestToken) {
                             $request->file_id = null;
@@ -635,13 +637,13 @@ class AdoaController extends Controller
                             'custom_properties')
                         ->where('model_id', $request->request_id)
                         ->get();
-    
+
                     $request->task_id = null;
                     $request->element_name = 'Completed';
                     $request->element_type = null;
                     $request->task_status = 'COMPLETED';
                     $request->user_id_task = null;
-    
+
                     if (count($listRequestTokens) == 0) {
                         $request->file_id = null;
                         $request->custom_properties = null;
@@ -934,7 +936,7 @@ class AdoaController extends Controller
                     ->where('process_request_tokens.process_request_id', $request->request_id)
                     ->where('process_request_tokens.status', 'ACTIVE')
                     ->get();
-                
+
                 if (count($listRequestTokens) > 0) {
                     foreach ($listRequestTokens as $requestToken) {
                         $request->file_id = null;
