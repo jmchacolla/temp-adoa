@@ -154,7 +154,7 @@ class MigrateUsers implements ShouldQueue
                 $findRow = DB::table('group_members')
                     ->where('member_id', $id)
                     ->where('group_id', config('adoa.manager_group_id'))
-                    ->first();
+                    ->get();
 
                 if (trim($import['MANAGER']) == 'Y' && count($findRow) == 0) {
                     DB::table('group_members')
@@ -177,7 +177,7 @@ class MigrateUsers implements ShouldQueue
                     'firstname' => trim($import['FIRST_NAME']),
                     'lastname' => trim($import['LAST_NAME']),
                     'username' => trim($import['EMPLOYEE']),
-                    'password' => 'p^@)YUvVB"j4.J*F',
+                    'password' => Hash::make('p^@)YUvVB"j4.J*F'),
                     'address' => trim($import['ADDRESS']),
                     'phone' => trim($import['WORK_PHONE']),
                     'is_administrator' => false,
