@@ -134,7 +134,7 @@ class MigrateUsers implements ShouldQueue
                     'phone' => trim($import['WORK_PHONE']),
                     'is_administrator' => false,
                     'status' => 'ACTIVE',
-                    'meta' => [
+                    'meta' => json_encode([
                         'ein' => trim($import['EMPLOYEE']),
                         'email' => trim($import['WORK_EMAIL']),
                         'position' => trim($import['POSITION']),
@@ -148,7 +148,7 @@ class MigrateUsers implements ShouldQueue
                         'term_date' => trim($import['TERM_DATE']),
                         'flsa_status' => trim($import['FLSA_STATUS']),
                         'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-                    ]
+                    ])
                 ]);
 
                 $findRow = DB::table('group_members')
@@ -183,7 +183,7 @@ class MigrateUsers implements ShouldQueue
                     'is_administrator' => false,
                     'status' => 'ACTIVE',
                     'timezone' => 'America/Phoenix',
-                    'meta' => [
+                    'meta' => json_encode([
                         'ein' => trim($import['EMPLOYEE']),
                         'email' => trim($import['WORK_EMAIL']),
                         'position' => trim($import['POSITION']),
@@ -197,7 +197,7 @@ class MigrateUsers implements ShouldQueue
                         'term_date' => trim($import['TERM_DATE']),
                         'flsa_status' => trim($import['FLSA_STATUS']),
                         'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-                    ]
+                    ])
                 ]);
 
                 DB::table('group_members')
