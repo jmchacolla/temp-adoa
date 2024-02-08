@@ -161,7 +161,7 @@ class MigrateUsers implements ShouldQueue
                     ->insert([
                         'group_id' => config('adoa.manager_group_id'),
                         'member_type' => 'ProcessMaker\Models\User',
-                        'member_id' => $newUserId->id,
+                        'member_id' => $id,
                         'created_at' => date('Y-m-d H:i:s'),
                         'updated_at' => null
                     ]);
@@ -172,7 +172,7 @@ class MigrateUsers implements ShouldQueue
                 }
             } else {
                 $newUserId = DB::table('users')
-                ->insert([
+                ->insertGetId([
                     'email' => $this->generateEmail($import),
                     'firstname' => trim($import['FIRST_NAME']),
                     'lastname' => trim($import['LAST_NAME']),
@@ -197,14 +197,15 @@ class MigrateUsers implements ShouldQueue
                         'term_date' => trim($import['TERM_DATE']),
                         'flsa_status' => trim($import['FLSA_STATUS']),
                         'indirect_super_position' => trim($import['INDIRECT_SUPER_POSITION'])
-                    ])
+                    ]),
+                    'created_at' => date('Y-m-d H:i:s')
                 ]);
 
                 DB::table('group_members')
                 ->insert([
                     'group_id' => config('adoa.employee_group_id'),
                     'member_type' => 'ProcessMaker\Models\User',
-                    'member_id' => $newUserId->id,
+                    'member_id' => $newUserId,
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => null
                 ]);
@@ -214,7 +215,7 @@ class MigrateUsers implements ShouldQueue
                     ->insert([
                         'group_id' => config('adoa.manager_group_id'),
                         'member_type' => 'ProcessMaker\Models\User',
-                        'member_id' => $newUserId->id,
+                        'member_id' => $newUserId,
                         'created_at' => date('Y-m-d H:i:s'),
                         'updated_at' => null
                     ]);
