@@ -167,7 +167,7 @@ class MigrateUsers implements ShouldQueue
                     ]);
                 } elseif (trim($import['MANAGER']) == 'N' && count($findRow) > 0) {
                     DB::table('group_members')
-                        ->where('id', $findRow->id)
+                        ->where('id', $findRow[0]->id)
                         ->delete();
                 }
             } else {
