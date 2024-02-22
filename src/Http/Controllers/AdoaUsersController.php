@@ -132,4 +132,8 @@ class AdoaUsersController extends Controller
         $employees = (new AdoaUsers)->getManagerEmployees($manager['meta']['position']);
         return $employees;
     }
+
+    public function getUsersByPosition(String $position) {
+        return AdoaUsers::getEmployeesByPosition($position);
+    }
 }
