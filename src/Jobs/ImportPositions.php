@@ -43,13 +43,6 @@ class ImportPositions implements ShouldQueue
     public function __construct($url)
     {
         $this->url = $url;
-        $this->loadExistingPositions();
-        $this->importAdoaExternalPositions([$this, 'savePositionInformation']);
-        
-        WorkflowManager::throwSignalEvent('adoa_positions', [
-            'created_positions' => $this->createdPositions,
-            'updated_positions' => $this->updatedPositions,
-        ]);
     }
 
     /**
@@ -59,12 +52,18 @@ class ImportPositions implements ShouldQueue
      */
     public function handle()
     {
-        
+        $this->loadExistingPositions();
+        $this->importAdoaExternalPositions([$this, 'savePositionInformation']);
+
+        WorkflowManager::throwSignalEvent('adoa_positions', [
+            'created_positions' => $this->createdPositions,
+            'updated_positions' => $this->updatedPositions,
+        ]);
     }
 
     private function loadExistingPositions()
     {
-        $getPositions = DB::table('collection_' . EnvironmentVariable::whereName('id_collection_positions')->first()->value)
+        $getPositions = DB::table('collection_' . EnvironmentVariable::whereName('id_adoa_positions_collection')->first()->value)
         ->select('id', 'data->POSITION as POSITION')
         ->get();
         
@@ -85,7 +84,7 @@ class ImportPositions implements ShouldQueue
         $id = array_search($import['POSITION'], $this->positions);
         try {
             if ($id !== false) {
-                DB::table('collection_' . EnvironmentVariable::whereName('id_collection_positions')->first()->value)
+                DB::table('collection_' . EnvironmentVariable::whereName('id_adoa_positions_collection')->first()->value)
                 ->where('id', $id)
                 ->update([
                     'data' => json_encode([
@@ -110,7 +109,7 @@ class ImportPositions implements ShouldQueue
                     'updated_at' => date('Y-m-d H:i:s')
                 ]);
             } else {
-                DB::table('collection_' . EnvironmentVariable::whereName('id_collection_positions')->first()->value)
+                DB::table('collection_' . EnvironmentVariable::whereName('id_adoa_positions_collection')->first()->value)
                 ->insert([
                     'data' => json_encode([
                         'POSITION' => trim($import['POSITION']),

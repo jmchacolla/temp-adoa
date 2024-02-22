@@ -18,24 +18,10 @@ class AdoaUsers extends Model
         'id',
         'username',
         'email',
-        // 'password',
         'firstname',
         'lastname',
         'status',
-        // 'address',
-        // 'city',
-        // 'state',
-        // 'postal',
-        // 'country',
-        // 'phone',
-        // 'fax',
-        'cell',
-        // 'title',
-        // 'birthdate',
-        // 'timezone',
-        // 'datetime_format',
-        // 'language',
-        // 'meta',
+        'cell'
     ];
 
     public function getFullName()
@@ -232,5 +218,66 @@ class AdoaUsers extends Model
             ->orderBy('firstname', 'asc')
             ->get()
             ->toArray();
+    }
+
+   /**
+    * @param String $position
+    *
+    * @return Array
+    */
+    static function getEmployeesByPosition (String $position) {
+        $employeeList = static::select('id',  'title',
+            'firstname', 'lastname',
+            'email', 'username',
+            'status', 'meta->ein as ein',
+            'meta->position as position',
+            'meta->super_position as super_position',
+            'meta->agency as agency',
+            'meta->agency_name as agency_name',
+            'meta->manager as manager'
+            )
+            ->where(function ($query) use ($position){
+                $query->where('meta->super_position', $position)
+                    ->orWhere('meta->indirect_super_position', $position);
+            })
+            ->where('status', 'ACTIVE')
+            ->orderBy('firstname', 'asc')
+            ->get()
+            ->toArray();
+
+        $positionsList = DB::table('collection_8')
+            ->where('data->SUPER_POSITION', $position)
+            ->get()
+            ->toArray();
+
+        $transformData = array_map(function ($element) {
+                return json_decode($element->data, true);
+            }, $positionsList);
+
+        $newEmployeeList = [];
+
+        foreach ($transformData as $key => $value) {
+            $userFound = array_search($value['POSITION'], array_column($employeeList, 'position'));
+            if ($userFound !== false) {
+                $newEmployeeList[] = $employeeList[$userFound];
+            } else {
+                $newEmployeeList[] = [
+                    'id' => 'NO_DEFINED',
+                    'title' => $value['TITLE'],
+                    'firstname' => 'VACANT',
+                    'lastname' => '(' . $value['TITLE'] . ')',
+                    'email' => '',
+                    'username' => '',
+                    'status' => '',
+                    'ein' => '',
+                    'position' => $value['POSITION'],
+                    'super_position' => $value['SUPER_POSITION'],
+                    'agency' => $value['AGENCY'],
+                    'agency_name' => $value['AGENCY_NAME'],
+                    'manager' => $value['MANAGER']
+                ];
+            }
+        }
+        return $newEmployeeList;
     }
 }

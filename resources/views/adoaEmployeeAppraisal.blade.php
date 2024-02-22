@@ -197,7 +197,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-12 col-md-12 col-sm-12" style="text-align: center" v-if="adoaEmployeeSelected != ''">
+                <div class="col-lg-12 col-md-12 col-sm-12" style="text-align: center" v-if="adoaEmployeeSelected != '' && adoaEmployeeSelected != 'NO_DEFINED'">
                     <button id="btnGetList" class="btn btn-primary btn-sm" @click="getAppraisalList">Get List</button>
                 </div>
 
@@ -263,6 +263,7 @@
                     return {
                         adoaEmployee: {},
                         adoaEmployeeSelected:'',
+                        adoaEmployeePosition: '',
                         adoaEmployeeName : '',
                         adoaUser : {!! json_encode($adoaUser, true) !!},
                         adoaEin : '',
@@ -299,11 +300,14 @@
                     }
                 },
                 methods : {
-                    populateEmployeDropdown(level, employeeId){
+                    // BY Managers
+                    // populateEmployeDropdown(level, employeeId){
+                    populateEmployeDropdown(level, employeePosition){
                         this.loading = true;
+                        var test = @json(auth()->user());
                         ProcessMaker.apiClient
                         .get(
-                            "/adoa/user/manager-employees/" + employeeId
+                            "/adoa/employee-list-by-position/" + employeePosition
                         )
                         .then(function(response) {
                             let newData= [{ 'id' : '', 'text' : '- Select -'}];
@@ -344,9 +348,9 @@
                                 app.rwaList = [];
                                 app.showList = false;
                                 let value = $("#adoaEmployeeLevel_" + level).select2('data');
-
-                                app.adoaEmployeeSelected = value[0].id;
+                                app.adoaEmployeeSelected = value[0].id == 'NO_DEFINED' ? '' : value[0].id;
                                 app.adoaEmployeeName = value[0].text;
+                                app.employeePosition = value[0].position;
                                 app.adoaEin = value[0].ein;
                                 app.agencyName = value[0].agency_name;
 
@@ -359,7 +363,7 @@
                                     });
                                     $('#adoaEmployeeLevel_' + index).empty();
                                 }
-                                app.populateEmployeDropdown(parseInt(level) + 1, parseInt(app.adoaEmployeeSelected));
+                                app.populateEmployeDropdown(parseInt(level) + 1, app.employeePosition);
                             });
                             app.loading = false;
                         })
@@ -367,6 +371,7 @@
                             app.loading = false;
                         });
                     },
+                    // By Admin
                     populateEmployeeList(){
                         this.loading = true;
                         ProcessMaker.apiClient
@@ -402,7 +407,7 @@
                                 app.appraisalList = [];
                                 app.showList = false;
                                 var value = $("#adoaEmployeeAdmin").select2('data');
-                                app.adoaEmployeeSelected = value[0].id;
+                                app.adoaEmployeeSelected = value[0].id == 'NO_DEFINED' ? '' : value[0].id;
 
                                 if(self.adoaEmployeeSelected != '') {
                                     ProcessMaker.apiClient
@@ -500,7 +505,7 @@
                     if (this.isSysAdmin) {
                         this.populateEmployeeList();
                     } else {
-                        this.populateEmployeDropdown(1, this.currentUserId);
+                        this.populateEmployeDropdown(1, this.currentUser.meta.position);
                     }
                 },
                 mounted: function () {

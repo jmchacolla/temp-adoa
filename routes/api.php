@@ -23,6 +23,8 @@ Route::group(['middleware' => ['auth:api', 'bindings']], function() {
     Route::get('adoa/get-information-by-manager/{type}/{user_id}', 'AdoaUserInformationController@getInformationByManager');
     Route::get('adoa/get-open-task/{user_id}/{request_id}', 'AdoaController@getOpenTask');
     Route::get('adoa/get-agency-enabled/{agency}', 'AdoaController@getAgencyEnabled');
+
+    Route::get('adoa/employee-list-by-position/{position}', 'AdoaUsersController@getUsersByPosition');
     ////---- RWA
     Route::get('adoa/rwa-user-report', 'AdoaRwaReportController@getRwaByEmployeByEin');
 
