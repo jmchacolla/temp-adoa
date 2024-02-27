@@ -1,18 +1,155 @@
 @extends('adoa::layouts.layout')
 
 @section('sidebar')
-    @include('layouts.sidebar', ['sidebar'=> Menu::get('sidebar_request')])
+@include('layouts.sidebar', ['sidebar'=> Menu::get('sidebar_request')])
 @endsection
 @section('css')
-    <link rel="stylesheet" href="{{mix('/css/package.css', 'vendor/processmaker/packages/adoa')}}">
-    <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css">
+<link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
+<link rel="stylesheet" type="text/css"
+    href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css">
+
+
 @endsection
 @section('content')
+
 <div class="col-sm-12">
-    <h3>My Requests</h3>
+    <h3>Requests from My Direct Reports</h3>
     <div class="card card-body table-card table-responsive" id="app-adoa">
+        <div class="form-group">
+            <div v-cloak>
+                <div class="row text-center">
+                    <div class="col-3 text-right">
+                        <label>Please select the employee name:</label>
+                    </div>
+                    <div class="col-6 text-left">
+                        <multiselect style="padding: 5px;" v-model="employeeSelectedParent" :options="employeesList" placeholder="Select one"
+                            label="text" track-by="text" @select="updateCurrentEmployee(employeeSelectedParent, 1)"
+                            @remove="unselected(1)">
+                            <template slot="option" slot-scope="props">
+                                <span class=""
+                                    v-if="typeof props.option.meta.manager !== 'undefined' && props.option.meta.manager=='Y'"><i
+                                        class="fas nav-icon fa-user "></i>
+                                    @{{props.option.text}} (@{{props.option.meta.ein}})</span>
+                                <span class="" v-else>@{{props.option.text}}
+                                    (@{{props.option.meta.ein}})</span>
+                            </template>
+                        </multiselect>
+                    </div>
+                    <div class="col-3 text-left">
+                        <label><b-spinner small variant="primary" v-show="spinners.select1"></b-spinner></label>
+                    </div>
+                    <div class="col-3 text-right">
+                    </div>
+                    <div class="col-6 text-left">
+                        <div v-if="showLevels.select2">
+                            <multiselect style="padding: 5px;" v-model="employeeSelectedParent2" :options="employeesList2"
+                                placeholder="Select one" label="text" track-by="text"
+                                @select="updateCurrentEmployee(employeeSelectedParent2, 2)" @remove="unselected(2)">
+                                <template slot="option" slot-scope="props">
+                                    <span class=""
+                                        v-if="Object.keys(employeesList2).length > 0 && typeof props.option.meta.manager !== 'undefined' && props.option.meta.manager=='Y'"><i
+                                            class="fas nav-icon fa-user "></i>
+                                        @{{props.option.text}}</span>
+                                </template>
+                            </multiselect>
+                        </div>
+                    </div>
+                    <div class="col-3 text-left">
+                        <label v-show="spinners.select2"><b-spinner small variant="primary"></b-spinner></label>
+                    </div>
+                    <div class="col-3 text-right">
+                    </div>
+                    <div class="col-6">
+                        <div v-if="showLevels.select3">
+                            <multiselect style="padding: 5px;" v-model="employeeSelectedParent3" :options="employeesList3"
+                                placeholder="Select one" label="text" track-by="text"
+                                @select="updateCurrentEmployee(employeeSelectedParent3, 3)" @remove="unselected(3)">
+                                <template slot="option" slot-scope="props">
+                                    <span class=""
+                                        v-if="typeof props.option.meta.manager !== 'undefined' && props.option.meta.manager=='Y'"><i
+                                            class="fas nav-icon fa-user "></i>
+                                        @{{props.option.text}}</span>
+                                </template>
+                            </multiselect>
+                        </div>
+                    </div>
+                    <div class="col-3 text-right">
+                        <label v-show="spinners.select3"><b-spinner small variant="primary"></b-spinner></label>
+                    </div>
+                    <div class="col-3 text-right">
+                    </div>
+                    <div class="col-6">
+                        <div v-if="showLevels.select4">
+                            <multiselect style="padding: 5px;" v-model="employeeSelectedParent4" :options="employeesList4"
+                                placeholder="Select one" label="text" track-by="text"
+                                @select="updateCurrentEmployee(employeeSelectedParent4, 4)" @remove="unselected(4)">
+                                <template slot="option" slot-scope="props">
+                                    <span class=""
+                                        v-if="typeof props.option.meta.manager !== 'undefined' && props.option.meta.manager=='Y'"><i
+                                            class="fas nav-icon fa-user "></i>
+                                        @{{props.option.text}}</span>
+                                </template>
+                            </multiselect>
+                        </div>
+                    </div>
+                    <div class="col-3 text-right">
+                        <label v-show="spinners.select4"><b-spinner small variant="primary"></b-spinner></label>
+                    </div>
+                    <div class="col-3 text-right">
+                    </div>
+                    <div class="col-6">
+                        <div v-if="showLevels.select5">
+                            <multiselect style="padding: 5px;" v-model="employeeSelectedParent5" :options="employeesList5"
+                                placeholder="Select one" label="text" track-by="text"
+                                @select="updateCurrentEmployee(employeeSelectedParent5, 5)" @remove="unselected(5)">
+                                <template slot="option" slot-scope="props">
+                                    <span class=""
+                                        v-if="typeof props.option.meta.manager !== 'undefined' && props.option.meta.manager=='Y'"><i
+                                            class="fas nav-icon fa-user "></i>
+                                        @{{props.option.text}}</span>
+                                </template>
+                            </multiselect>
+                        </div>
+                    </div>
+                    <div class="col-3 text-right">
+                        <label v-show="spinners.select5"><b-spinner small variant="primary"></b-spinner></label>
+                    </div>
+                    <input v-model="currentEmployee" class="invisible"></input>
+                </div>
+                <br />
+                <div class="col-lg-12 col-md-12 col-sm-12" style="margin:10px;" v-if="currentEmployee > 0">
+                    <div class="row">
+                        <div class="form-group col col-lg-4 col-md-4 col-sm-12">
+                            <label for="currentEmployeeData.text" style="padding:5px;" class="label-color">
+                                Employee Name
+                            </label>
+                            <input type="text" class="form-control" id="adoaEmployeeName" placeholder="Employee Name"
+                                disabled v-model="currentEmployeeData.text">
+                        </div>
+                        <div class="form-group col col-lg-4 col-md-4 col-sm-12">
+                            <label for="currentEmployeeData.meta.ein" style="padding:5px;" class="label-color">
+                                EIN
+                            </label>
+                            <input type="text" class="form-control" id="adoaEin" placeholder="EIN" disabled
+                                v-model="currentEmployeeData.meta.ein">
+                        </div>
+                        <div class="form-group col col-lg-4 col-md-4 col-sm-12">
+                            <label for="agencyName" style="padding:5px;" class="label-color">
+                                Agency
+                            </label>
+                            <input type="text" class="form-control" id="agencyName" placeholder="Agency" disabled
+                                v-model="currentEmployeeData.meta.agency_name">
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12 col-md-12 col-sm-12" style="text-align: center">
+                        <button id="btnGetList" class="btn btn-primary btn-sm" @click="getRequestsList">Get
+                            List</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <table class="table table-striped table-hover" id="listRequests" width="100%" style="font-size: 13px">
             <thead class="table-primary">
                 <tr>
@@ -30,136 +167,18 @@
             </thead>
             <tbody>
                 @php
-                    $count = count($adoaListRequests);
-
+                 $count = 0;
                 @endphp
-                @if ($count > 0)
-                    @foreach ($adoaListRequests as $request)
-                        @if ($request->name != 'Email Notification Sub Process')
-                            @php
-                                $createdDate = $request->created_at;
-                                $newCreatedDate = new DateTime($createdDate);
-                                //$newCreatedDate->setTimezone(new DateTimeZone(Auth::user()->timezone));
-                                $newCreatedDate->setTimezone(new DateTimeZone('America/Phoenix'));
-                                if($request->completed_at != null) {
-                                    $completedDate = $request->completed_at;
-                                    $newCompletedDate = new DateTime($completedDate);
-                                    //$newCompletedDate->setTimezone(new DateTimeZone(Auth::user()->timezone));
-                                    $newCompletedDate->setTimezone(new DateTimeZone('America/Phoenix'));
-                                    $newCompletedDateFormat = $newCompletedDate->format('m/d/Y h:i:s A');
-                                } else {
-                                    $newCompletedDateFormat = '';
-                                }
-                                $data = $request->data;
-                                $newData = json_decode($data);
-                                if (!is_null($request->custom_properties)) {
-                                    $customProperties = $request->custom_properties;
-                                    $newCustomProperties = json_decode($customProperties);
-                                }
-                            @endphp
-                            @if ($request->task_status == 'COMPLETED' && (!empty($request->file_id) || !is_null($request->file_id)))
-                                <tr>
-                                    <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                    <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
-                                    <td class="text-left">
-                                        @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
-                                            @php
-                                                $dataName = $newCustomProperties->data_name;
-                                                $nameFile = explode('_', $dataName);
-                                            @endphp
-                                            @if (array_key_exists(3, $nameFile) && array_key_exists(4, $nameFile))
-                                                {{ $nameFile[3] }} {{ $nameFile[4] }}
-                                            @endif
-                                        @else
-                                            @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                            @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
-                                            @endif
-                                        @endif
-                                    </td>
-                                    <td class="text-left">
-                                        @if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf)
-                                            @if (array_key_exists(5, $nameFile))
-                                                {{ $nameFile[5] }}
-                                            @endif
-                                        @else
-                                            @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                {{ $newData->EMA_EMPLOYEE_EIN }}
-                                            @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                {{ $newData->CON_EMPLOYEE_EIN }}
-                                            @endif
-                                        @endif
-                                    </td>
-                                    <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                    <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                    <td class="text-left">{{ $request->element_name }}</td>
-                                    <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
-                                    <td class="text-left">{{ $request->request_status }}</td>
-                                    <td class="text-right">
-                                        <a href="javascript: viewPdf({{ $request->request_id }}, {{ $request->file_id }});"><i class="fas fa-eye" style="color: #71A2D4;" title="View Document"></i></a>&nbsp;
-                                        <a href="javascript: printPdf({{ $request->request_id }}, {{ $request->file_id }});"><i class="fas fa-print" style="color: #71A2D4;" title="Print Document"></i></a>&nbsp;
-                                        <a href="/request/{{ $request->request_id }}/files/{{ $request->file_id }}"><i class="fas fa-download" style="color: #71A2D4;" title="Download Document"></i></a>&nbsp;
-                                    </td>
-                                </tr>
-                            @elseif ($request->task_status == 'ACTIVE')
-                                <tr>
-                                    <td class="text-left" style="color: #71A2D4;"><strong>{{ $request->request_id }}</strong></td>
-                                    <td class="text-left">@if ($request->process_id == $process_id_terminate_rwa_send_email_and_pdf) Remote Work - Terminate Agreement @else {{ $request->name }} @endif</td>
-                                    <td class="text-left">
-                                        @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
-                                            @if (!empty($newData->EMA_EMPLOYEE_FIRST_NAME))
-                                                {{ $newData->EMA_EMPLOYEE_FIRST_NAME }} {{ $newData->EMA_EMPLOYEE_LAST_NAME }}
-                                            @elseif(!empty($newData->CON_EMPLOYEE_FIRST_NAME))
-                                                {{ $newData->CON_EMPLOYEE_FIRST_NAME }} {{ $newData->CON_EMPLOYEE_LAST_NAME }}
-                                            @endif
-                                        @endif
-                                    </td>
-                                    <td class="text-left">
-                                        @if ($request->process_id != $process_id_terminate_rwa_send_email_and_pdf)
-                                            @if (!empty($newData->EMA_EMPLOYEE_EIN))
-                                                {{ $newData->EMA_EMPLOYEE_EIN }}
-                                            @elseif (!empty($newData->CON_EMPLOYEE_EIN))
-                                                {{ $newData->CON_EMPLOYEE_EIN }}
-                                            @endif
-                                        @endif
-                                    </td>
-                                    <td class="text-left">{{ $newCreatedDate->format('m/d/Y h:i:s A') }}</td>
-                                    <td class="text-left">{{ $newCompletedDateFormat }}</td>
-                                    <td class="text-left">{{ $request->element_name }}</td>
-                                    <td class="text-left">{{ $request->firstname }} {{ $request->lastname }}</td>
-                                    <td class="text-left">{{ $request->request_status }}</td>
-                                    <td class="text-right">
-                                        @if ($request->user_id == Auth::user()->id)
-                                        <a href="/../tasks/{{ $request->task_id }}/edit"><i class="fas fa-external-link-square-alt" style="color: #71A2D4;" title="Go To Document"></i></a>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endif
-                        @endif
-                    @endforeach
-                @endif
-          </tbody>
+            </tbody>
         </table>
     </div>
-    <div class="modal fade" id="showPdf" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
+
+
 @section('js')
 <script>
     window.temp_define = window['define'];
-    window['define']  = undefined;
+    window['define'] = undefined;
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
@@ -167,48 +186,48 @@
 <script>
     window['define'] = window.temp_define;
 </script>
+
 <script type="text/javascript">
     $(".skip-navigation.alert.alert-info").hide();
-    $(document).ready( function () {
+    $(document).ready(function () {
         $('th').on("click", function (event) {
-            if($(event.target).is("input")){
+            if ($(event.target).is("input")) {
                 event.stopImmediatePropagation();
             }
         });
-
         var table = $('#listRequests').DataTable({
             "initComplete": function () {
                 count = 0;
-                this.api().columns().every( function () {
-                    if(this.index() != 0 && this.index() != 9) {
+                this.api().columns().every(function () {
+                    if (this.index() != 0 && this.index() != 9) {
                         var title = this.header();
                         //replace spaces with dashes
                         title = $(title).html().replace(/[\W]/g, '-');
                         var column = this;
                         var select = $('<select id="' + title + '" class="select2"></select>')
-                        .appendTo( $(column.header()).empty() )
-                        .on( 'change', function () {
-                            //Get the "text" property from each selected data
-                            //regex escape the value and store in array
-                            var data = $.map( $(this).select2('data'), function( value, key ) {
-                                return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
+                            .appendTo($(column.header()).empty())
+                            .on('change', function () {
+                                //Get the "text" property from each selected data
+                                //regex escape the value and store in array
+                                var data = $.map($(this).select2('data'), function (value, key) {
+                                    return value.text ? '^' + $.fn.dataTable.util.escapeRegex(value.text) + '$' : null;
+                                });
+
+                                //if no data selected use ""
+                                if (data.length === 0) {
+                                    data = [""];
+                                }
+
+                                //join array into string with regex or (|)
+                                var val = data.join('|');
+
+                                //search for the option(s) selected
+                                column.search(val ? val : '', true, false).draw();
                             });
-
-                            //if no data selected use ""
-                            if (data.length === 0) {
-                                data = [""];
-                            }
-
-                            //join array into string with regex or (|)
-                            var val = data.join('|');
-
-                            //search for the option(s) selected
-                            column.search( val ? val : '', true, false ).draw();
-                        });
 
                         column.data().unique().sort().each(function (d, j) {
                             if (d != "") {
-                                select.append( '<option value="' + d + '">' + d + '</option>' );
+                                select.append('<option value="' + d + '">' + d + '</option>');
                             }
                         });
 
@@ -225,10 +244,32 @@
                     }
                 });
             },
-            "order": [[ 0, "desc" ]],
+            "order": [
+                [0, "desc"]
+            ],
             "pageLength": 25
+        });
+
+        function formatText(icon) {
+            return $('<span><i class="fas ' + $(icon.element).data('icon') + '"></i> ' + icon.text + '</span>');
+        };
+
+        $('#filterEmployee').select2({
+            width: "100%",
+            templateSelection: formatText,
+            templateResult: formatText
+        });
+
+        $('#filterEmployee').change(function () {
+            alert($('#filterEmployee').val());
         });
     });
 </script>
+<script language="JavaScript">
+    var USER_ID = '{{  $userId }}';
+    var token = "{{ csrf_token() }}";
+</script>
+<script src="{{mix('/js/jsListManager.js', 'vendor/processmaker/packages/adoa')}}"></script>
+
 @endsection
 @endsection

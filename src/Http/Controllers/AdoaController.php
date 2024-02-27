@@ -892,18 +892,11 @@ class AdoaController extends Controller
     }
 
     public function getListDirectReports() {
-        $adoaListUsersDirectReport = DB::table('users')
-            ->select('id')
-            ->where('meta->super_position', Auth::user()->meta->position)
-            ->get()
-            ->toArray();
-
-        $listDirectReport = array();
-
-        foreach ($adoaListUsersDirectReport as $directReport) {
-            $listDirectReport[] = $directReport->id;
-        }
-
+        $userId = auth()->user()->id;
+         return view('adoa::adoaListManager', ['userId' => $userId]);
+    }
+  
+    public function getListRequestsManager($userId) {
         $adoaListDirectReport = DB::table('process_requests')
             ->join('processes', 'process_requests.process_id', '=', 'processes.id')
             ->select('process_requests.id as request_id',
@@ -916,10 +909,9 @@ class AdoaController extends Controller
             ->whereNotIn('processes.process_category_id', [1, 2])
             ->whereNotIn('process_requests.process_id', [EnvironmentVariable::whereName('process_id_regeneration')->first()->value])
             ->whereIn('process_requests.status', ['ACTIVE', 'COMPLETED'])
-            ->whereIn('process_requests.user_id', $listDirectReport)
+            ->where('process_requests.user_id', $userId)
             ->orderBy('process_requests.id', 'desc')
             ->get();
-
         $finalRequestList = array();
         foreach ($adoaListDirectReport as $request) {
             if($request->request_status == 'ACTIVE') {
@@ -936,7 +928,7 @@ class AdoaController extends Controller
                     ->where('process_request_tokens.process_request_id', $request->request_id)
                     ->where('process_request_tokens.status', 'ACTIVE')
                     ->get();
-
+              
                 if (count($listRequestTokens) > 0) {
                     foreach ($listRequestTokens as $requestToken) {
                         $request->file_id = null;
@@ -962,7 +954,6 @@ class AdoaController extends Controller
                         'custom_properties')
                     ->where('model_id', $request->request_id)
                     ->get();
-
                 $request->task_id = null;
                 $request->element_name = 'Completed';
                 $request->element_type = null;
@@ -970,7 +961,6 @@ class AdoaController extends Controller
                 $request->user_id = null;
                 $request->firstname = null;
                 $request->lastname = null;
-
                 if (count($listRequestTokens) == 0) {
                     $request->file_id = null;
                     $request->custom_properties = null;
@@ -981,8 +971,6 @@ class AdoaController extends Controller
                 $finalRequestList[] = $request;
             }
         }
-
-        return view('adoa::adoaListManager', ['adoaListRequests' => $finalRequestList, 'process_id_terminate_rwa_send_email_and_pdf' => EnvironmentVariable::whereName('process_id_terminate_rwa_send_email_and_pdf')->first()->value]);
+         return $finalRequestList;
     }
-
-}
+ }

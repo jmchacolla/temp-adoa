@@ -136,4 +136,20 @@ class AdoaUsersController extends Controller
     public function getUsersByPosition(String $position) {
         return AdoaUsers::getEmployeesByPosition($position);
     }
-}
+    public function getDependentEmployees(Request $request, int $id)
+    {
+        try {
+            $adoaUser = new AdoaUsers();
+            $employeeList = array();
+            if ($adoaUser->isAdoaManager($id)) {
+                $employees = $this->getEmployeesByManagerId($id);
+                $employeeList = empty($employees) ? [] : $employees;
+                array_unshift($employeeList);
+            }
+            return $employeeList;
+        } catch (Exception $exception) {
+            throw new Exception('Error on Function getUserIdFullname: ' . $exception->getMessage());
+        }
+    }
+ }
+ 
