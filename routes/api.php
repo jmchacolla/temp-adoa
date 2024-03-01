@@ -1,5 +1,51 @@
 <?php
+
 Route::group(['middleware' => ['auth:api', 'bindings']], function() {
-    Route::get('admin/package-zj-adoa/fetch', 'PackageZjAdoaController@fetch')->name('package.adoa.fetch');
-    Route::apiResource('admin/package-zj-adoa', 'PackageZjAdoaController');
+    Route::get('admin/adoa/fetch', 'AdoaController@fetch')->name('package.customer.adoa.fetch');
+    Route::apiResource('admin/adoa', 'AdoaController');
+    Route::get('adoa/employee-list/{id}', 'AdoaUsersController@getUsersIdFullname');
+    Route::get('adoa/user/{id}', 'AdoaUsersController@getUser');
+    Route::get('adoa/user-title/{title}', 'AdoaUsersController@getUserByEin');
+    Route::get('adoa/user-information/{ein}', 'AdoaUserInformationController@getUserManager');
+    Route::resource('adoa/user-information', 'AdoaUserInformationController');
+    Route::resource('adoa/type-appraisal', 'AdoaTypeAppraisalDetailController');
+    Route::post('adoa/employee-appraisal', 'AdoaEmployeeAppraisalController@store');
+	Route::get('adoa/get-request-by-user/{process_id}/{user_id}', 'AdoaController@getRequestByProcessAndUser');
+	Route::get('adoa/user-information-data/{user_id}', 'AdoaUserInformationController@getUserInformationByUserId');
+    Route::get('getenvs', 'AdoaController@getEnvs')->name('getenvs');
+    Route::get('adoa/get-task/{request}', 'AdoaController@getTask');
+	Route::get('adoa/get-task-by-user/{request}/{user_id}', 'AdoaController@getTaskByUser');
+    Route::get('adoa/group-admin-agency/{user_id}/{groupId}', 'AdoaController@getGroupAdminAgency');
+    Route::get('adoa/group-admin/{user_id}', 'AdoaController@getGroupAdmin');
+    Route::get('adoa/user-ein/{ein}', 'AdoaController@getUserInformation');
+    Route::get('adoa/user-by-ein/{ein}', 'AdoaController@getUserByEin');
+    Route::get('adoa/get-information/{type}/{user_id}', 'AdoaUserInformationController@getInformation');
+    Route::get('adoa/get-information-by-manager/{type}/{user_id}', 'AdoaUserInformationController@getInformationByManager');
+    Route::get('adoa/get-open-task/{user_id}/{request_id}', 'AdoaController@getOpenTask');
+    Route::get('adoa/get-agency-enabled/{agency}', 'AdoaController@getAgencyEnabled');
+
+    Route::get('adoa/employee-list-by-position/{position}', 'AdoaUsersController@getUsersByPosition');
+    Route::get('adoa/employee-list-data/{id}', 'AdoaUsersController@getDependentEmployees');
+    Route::get('adoa/requests-list/{user_id}', 'AdoaController@getListRequestsManager');
+    ////---- RWA
+    Route::get('adoa/rwa-user-report', 'AdoaRwaReportController@getRwaByEmployeByEin');
+
+    Route::get('adoa/users/prod', 'AdoaMigrateUsersController@migratedUsersProd');
+    Route::get('adoa/users/dev', 'AdoaMigrateUsersController@migratedUsersDev');
+    Route::get('adoa/users/admin', 'AdoaMigrateUsersController@migrateAdministrators');
+    Route::get('adoa/get-users-agency', 'AdoaController@getUsersByAgency');
+    Route::get('adoa/get-task-agency/{request_id}', 'AdoaController@getTaskAgency');
+    // Get manager's employees by manager user Id
+    Route::get('adoa/user/manager-employees/{user_id}', 'AdoaUsersController@getManagerEmployees');
+    // Get collections records
+    Route::post('adoa/rwa-collection/rwa-report', 'Api\AdoaCollectionController@getRwaReportByUser');
+    Route::post('adoa/azp-collection/azp-report', 'Api\AdoaCollectionController@getAzpReportByUser');
+    Route::put('adoa/update-task/{task}', 'AdoaController@updateTaskRequest');
+    Route::get('adoa/expiration-agreement/{collectionId}', 'AdoaController@getValidAgreement');
+    Route::get('adoa/unassigned', 'AdoaController@getRequestsUnassigned');
+
+    Route::get('adoa/positions/prod', 'AdoaImportPositionsController@importPositionsProd');
+    Route::get('adoa/positions/dev', 'AdoaImportPositionsController@importPositionsDev');
 });
+
+Route::get('adoa/agency-dashboard/{groupId}', 'AdoaController@getListRequestsAgencyDashboard');

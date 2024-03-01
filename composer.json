@@ -1,21 +1,23 @@
 {
     "name": "processmaker/package-zj-adoa",
-    "friendly_name": "Package ADOA",
-    "description": "Package for customer ADOA",
+    "friendly_name": "package-zj-adoa",
+    "description": "ADOA package",
     "license": "AGPL-3.0-or-later",
     "version": "0.0.2",
     "type": "project",
     "authors": [
         {
-            "name": "Jukumari Team",
+            "name": "Jukumari",
             "email": "jukumari@processmaker.com"
         }
     ],
     "require": {
+        "barryvdh/laravel-dompdf": "^2.0"
     },
     "autoload": {
         "psr-4": {
-            "ProcessMaker\\Package\\PackageZjAdoa\\": "src"
+            "ProcessMaker\\Package\\PackageZjAdoa\\": "src",
+            "Tests\\PackageZjAdoa\\": "tests"
         }
     },
     "extra": {

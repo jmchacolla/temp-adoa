@@ -1,0 +1,1 @@
+/opt/processmaker/.php-cs-fixer.php

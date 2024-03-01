@@ -88,7 +88,7 @@
                             "",
                             () => {
                                 ProcessMaker.apiClient
-                                    .delete("admin/package-zj-adoa/" + data.id)
+                                    .delete("admin/adoa/" + data.id)
                                     .then(response => {
                                         ProcessMaker.alert("Sample " + data.name + " has been deleted", "warning");
                                         this.$emit("reload");
@@ -105,7 +105,7 @@
                 // Load from our api client
                 ProcessMaker.apiClient
                     .get(
-                        "admin/package-zj-adoa/fetch?page=" +
+                        "admin/adoa/fetch?page=" +
                         this.page +
                         "&per_page=" +
                         this.perPage +

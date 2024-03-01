@@ -1,11 +1,19 @@
 <?php
 namespace ProcessMaker\Package\PackageZjAdoa;
 
+use Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use ProcessMaker\Models\Group;
 use ProcessMaker\Package\Packages\Events\PackageEvent;
 use ProcessMaker\Package\PackageZjAdoa\Http\Middleware\AddToMenus;
+use ProcessMaker\Package\PackageZjAdoa\Http\Middleware\Redirect;
 use ProcessMaker\Package\PackageZjAdoa\Listeners\PackageListener;
+use ProcessMaker\Package\PackageComments\Http\Middleware\AddToMenus as CommentsAddToMenus;
+use ProcessMaker\Package\SavedSearch\Http\Middleware\AddToMenus as SavedSearchAddToMenus;
+use GlobalScripts;
+
+
 
 class PackageServiceProvider extends ServiceProvider
 {
@@ -32,8 +40,14 @@ class PackageServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        GlobalScripts::addScript('/vendor/processmaker/packages/package-zj-adoa/js/checkRequestsCoachingNotes.js');
+
+        $this->setGroupIds();
+
         if ($this->app->runningInConsole()) {
-            require(__DIR__ . '/../routes/console.php');
+            $this->commands([
+                Console\Commands\Install::class,
+            ]);
         } else {
             // Assigning to the web middleware will ensure all other middleware assigned to 'web'
             // will execute. If you wish to extend the user interface, you'll use the web middleware
@@ -47,7 +61,17 @@ class PackageServiceProvider extends ServiceProvider
                 ->prefix('api/1.0')
                 ->group(__DIR__ . '/../routes/api.php');
 
+            if (class_exists(SavedSearchAddToMenus::class)) {
+                Route::pushMiddlewareToGroup('web', SavedSearchAddToMenus::class);
+            }
+
+            if (class_exists(CommentsAddToMenus::class)) {
+                Route::pushMiddlewareToGroup('web', CommentsAddToMenus::class);
+            }
+
             Route::pushMiddlewareToGroup('web', AddToMenus::class);
+
+            Route::pushMiddlewareToGroup('web', Redirect::class);
         }
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views/', 'package-zj-adoa');
@@ -58,5 +82,44 @@ class PackageServiceProvider extends ServiceProvider
 
         $this->app['events']->listen(PackageEvent::class, PackageListener::class);
 
+        $this->publishes([
+            __DIR__.'/../classes' => public_path('vendor/processmaker/packages/package-zj-adoa'),
+        ], 'package-zj-adoa');
+
+        $this->app->bind(
+            \ProcessMaker\Http\Controllers\Api\ProcessController::class,
+            \ProcessMaker\Package\PackageZjAdoa\Http\Controllers\Api\ProcessController::class
+        );
+    }
+
+    private function setGroupIds()
+    {
+        if (!empty(env('BUILDING_IMAGE', false))) {
+            return;
+        }
+
+        if (! $id = Cache::get('adoa.admin_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Administrators%')->first())->id;
+            Cache::put('adoa.admin_group_id', $id);
+        }
+        config(['adoa.admin_group_id' => $id]);
+
+        if (! $id = Cache::get('adoa.employee_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Employees%')->first())->id;
+            Cache::put('adoa.employee_group_id', $id);
+        }
+        config(['adoa.employee_group_id' => $id]);
+
+        if (! $id = Cache::get('adoa.manager_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Managers%')->first())->id;
+            Cache::put('adoa.manager_group_id', $id);
+        }
+        config(['adoa.manager_group_id' => $id]);
+
+        if (! $id = Cache::get('adoa.agency_admin_group_id')) {
+            $id = optional(Group::where('name', 'LIKE', '%Agency Admin%')->first())->id;
+            Cache::put('adoa.agency_admin_group_id', $id);
+        }
+        config(['adoa.agency_admin_group_id' => $id]);
     }
 }

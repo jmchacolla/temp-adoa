@@ -16,5 +16,15 @@ folder configured for publishing by default.
 
 mix.setPublicPath('public')
     .js('resources/js/package.js', 'js')
+    .js('resources/js/adoaEmployeeAppraisal.js', 'js')
+    .js('resources/js/checkRequestsCoachingNotes.js', 'js')
+    .js('resources/js/jsListManager.js', 'js')
     .sass('resources/sass/package.scss', 'css')
-    .version();
+    .version()
+    .then(() => {
+        try {
+          require('./webpack.callback')();
+        } catch(e) {
+          //No callback found
+        }
+    });

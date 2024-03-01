@@ -1,7 +1,6 @@
 import Vue from "vue";
 import BootstrapVue from "bootstrap-vue";
 import VModal from "vue-js-modal";
-import SampleListing from "./components/SamplesListing";
 
 Vue.use(VModal);
 Vue.use(BootstrapVue);
